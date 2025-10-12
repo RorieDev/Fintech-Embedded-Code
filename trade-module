@@ -175,7 +175,7 @@
             <button class="btn" id="placeOrder" type="button">Submit Market Order</button>
           </div>
         </div>
-        <div class="helper">Type: <b>market</b> · Time in force: <b>day</b></div>
+        <div class="helper">Type: <b>market</b> · Time in force: <b>day</b> · Separate multiple symbols with <b>/</b>, <b>,</b>, or spaces.</div>
         <div id="order-result" class="order-result"></div>
       </div>
 
@@ -242,7 +242,18 @@
 
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
-    function up(s){ return (s||"").replace(/\s+/g,"").toUpperCase(); }
+    function toSymbols(input){
+      var seen = {};
+      return (input || "")
+        .toUpperCase()
+        .split(/[\s,\/]+/)
+        .map(function(part){ return part.replace(/[^A-Z0-9.\-]/g,""); })
+        .filter(function(part){
+          if(!part || seen[part]){ return false; }
+          seen[part] = true;
+          return true;
+        });
+    }
     function debounce(fn,ms){ var t; return function(){ var a=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,a); }, ms); }; }
 
     function api(path, options){
@@ -439,19 +450,47 @@
     })();
 
     function onPlace(){
-      var symbol=up($("symbol").value);
+      var symbols=toSymbols($("symbol").value);
       var side=$("side").value;
       var qty=parseInt($("qty").value,10);
-      if(!symbol){ alert("Enter a symbol (e.g., AAPL)."); return; }
+      if(!symbols.length){ alert("Enter symbol(s) (e.g., AAPL)."); return; }
       if(!(qty>0)){ alert("Quantity must be > 0."); return; }
-      $("placeOrder").disabled=true; $("order-result").textContent="Placing order…";
-      var payload={symbol:symbol, side:side, type:"market", time_in_force:"day", qty:String(qty)};
-      postOrder(payload).then(function(resp){
-        $("order-result").textContent="Order submitted: "+resp.id+" ("+(resp.status||"submitted")+")";
-        return Promise.all([renderAccount(),renderPositions(),renderOrders()]);
+      var orderBtn=$("placeOrder");
+      var resultEl=$("order-result");
+      orderBtn.disabled=true; resultEl.textContent="Placing order…";
+      var success=[]; var failures=[]; var refreshNeeded=false;
+
+      function submitNext(index){
+        if(index>=symbols.length){ return Promise.resolve(); }
+        var sym=symbols[index];
+        resultEl.textContent="Placing order for "+sym+"…";
+        var payload={symbol:sym, side:side, type:"market", time_in_force:"day", qty:String(qty)};
+        return postOrder(payload).then(function(resp){
+          refreshNeeded=true;
+          success.push(sym+" ("+(resp.status||"submitted")+")");
+        }).catch(function(e){
+          failures.push(sym+": "+e.message);
+        }).then(function(){ return submitNext(index+1); });
+      }
+
+      submitNext(0).then(function(){
+        var parts=[];
+        if(success.length){ parts.push((success.length>1?"Orders":"Order")+" submitted: "+success.join(", ")); }
+        if(failures.length){ parts.push((failures.length>1?"Errors":"Error")+": "+failures.join(" · ")); }
+        if(!parts.length){ parts.push("No orders submitted."); }
+        resultEl.textContent=parts.join(" · ");
+        if(failures.length){ alert((failures.length>1?"Some orders failed: ":"Order failed: ")+failures.join(" · ")); }
+        if(refreshNeeded){
+          return Promise.all([renderAccount(),renderPositions(),renderOrders()]).catch(function(e){
+            var extra="Refresh failed: "+e.message;
+            resultEl.textContent = resultEl.textContent ? resultEl.textContent+" · "+extra : extra;
+            alert(extra);
+          });
+        }
       }).catch(function(e){
-        $("order-result").textContent="Error: "+e.message; alert("Order failed: "+e.message);
-      }).then(function(){ $("placeOrder").disabled=false; });
+        resultEl.textContent="Error: "+e.message;
+        alert("Order failed: "+e.message);
+      }).finally(function(){ orderBtn.disabled=false; });
     }
 
     function init(){
