@@ -16,7 +16,8 @@
     .pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--text)}
     .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;align-items:start}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;align-items:start;align-items:flex-start;align-content:start;align-content:flex-start}
+    .grid>.card{align-self:start;align-self:flex-start}
     .span-4{grid-column:span 4} .span-6{grid-column:span 6} .span-8{grid-column:span 8} .span-12{grid-column:span 12}
     @media (max-width:900px){ .grid{grid-template-columns:1fr} .grid>.card{grid-column:1/-1!important} }
 
