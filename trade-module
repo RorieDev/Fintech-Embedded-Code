@@ -16,10 +16,31 @@
     .pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--text)}
     .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 
-    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;align-items:start;align-items:flex-start;align-content:start;align-content:flex-start}
-    .grid>.card{align-self:start;align-self:flex-start}
-    .span-4{grid-column:span 4} .span-6{grid-column:span 6} .span-8{grid-column:span 8} .span-12{grid-column:span 12}
-    @media (max-width:900px){ .grid{grid-template-columns:1fr} .grid>.card{grid-column:1/-1!important} }
+    .grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:16px;
+      align-items:flex-start;
+      align-content:flex-start;
+    }
+    .grid>.card{
+      align-self:flex-start;
+      flex:1 1 100%;
+      min-width:0;
+    }
+    .span-4{flex:1 1 280px; max-width:calc(33.333% - 8px)}
+    .span-6{flex:1 1 360px; max-width:calc(50% - 8px)}
+    .span-8{flex:1 1 480px; max-width:calc(66.666% - 8px)}
+    .span-12{flex-basis:100%; max-width:100%}
+    @media (max-width:900px){
+      .span-4,
+      .span-6,
+      .span-8,
+      .span-12{
+        flex:1 1 100%;
+        max-width:100%;
+      }
+    }
 
     .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
     .h2{font-size:16px;font-weight:700;margin:0 0 10px 0;color:#333}
