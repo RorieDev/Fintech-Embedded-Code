@@ -145,7 +145,7 @@
     .total-summary{width:100%;border-collapse:collapse}
     .total-summary td{padding:10px 14px;border:1px solid var(--border);background:#fff}
     .total-summary td.label{font-weight:600;color:#555}
-    .total-summary td.value{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#333}
+    .total-summary td.value{text-align:right;font-variant-numeric:tabular-nums;font-weight:400;color:#333}
     .total-summary .total-row td{background:var(--surface-2);font-weight:800}
     @media (max-width:680px){
       .total-summary tr{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px}
