@@ -132,7 +132,7 @@
       -webkit-font-smoothing:antialiased; direction:ltr;
     }
 
-    .kpi{font-size:22px;font-weight:700;color:#333} .kpi-label{font-size:12px;color:var(--muted);margin-top:2px}
+    .kpi{font-size:22px;font-weight:400;color:#333} .kpi-label{font-size:12px;color:var(--muted);margin-top:2px}
     .kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
     .kpi-item{display:flex;flex-direction:column;gap:4px}
     @media(max-width:640px){.kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
