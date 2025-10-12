@@ -77,18 +77,12 @@
     .accordion[data-open="true"] .chevron{transform:rotate(90deg); color:var(--accent)}
     .card-account .accordion-body .btn-secondary,
     .card-positions .accordion-body .btn-secondary{margin-top:auto;}
-    .card-account .accordion-toggle,
-    .card-positions .accordion-toggle{background:#7A7A7A;color:#fff;}
-    .card-account .accordion-toggle:hover,
-    .card-positions .accordion-toggle:hover{background:#6a6a6a;color:#fff;}
-    .card-account.accordion[data-open="true"] .accordion-toggle,
-    .card-positions.accordion[data-open="true"] .accordion-toggle{background:#7A7A7A;color:#fff;}
-    .card-account .accordion-toggle .chevron,
-    .card-positions .accordion-toggle .chevron{color:#fff;}
-    .card-account .accordion-toggle:hover .chevron,
-    .card-positions .accordion-toggle:hover .chevron{color:#fff;}
-    .card-account.accordion[data-open="true"] .chevron,
-    .card-positions.accordion[data-open="true"] .chevron{color:#fff;}
+    .card-account .accordion-toggle{background:#7A7A7A;color:#fff;}
+    .card-account .accordion-toggle:hover{background:#6a6a6a;color:#fff;}
+    .card-account.accordion[data-open="true"] .accordion-toggle{background:#7A7A7A;color:#fff;}
+    .card-account .accordion-toggle .chevron{color:#fff;}
+    .card-account .accordion-toggle:hover .chevron{color:#fff;}
+    .card-account.accordion[data-open="true"] .chevron{color:#fff;}
     @media (max-width:640px){
       .accordion-toggle{padding:16px}
       .accordion-body{padding:0 16px 16px 16px}
