@@ -1,4 +1,4 @@
-<!-- TamRor × Alpaca Paper Trading · Single-file (centered action button, iOS focus-safe, tall select with correctly centered Buy/Sell text) -->
+<!-- TamRor × Alpaca Paper Trading · Single-file (accordion hover/active now pink #FC6481) -->
 <div id="tamror-alpaca" class="tamror-root">
   <style>
     :root{
@@ -20,23 +20,31 @@
 
     .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
     .h2{font-size:16px;font-weight:700;margin:0 0 10px 0;color:#333}
+
+    /* Accordion (hover/active pink) */
     .accordion{padding:0;overflow:hidden}
     .accordion + .accordion{margin-top:0}
     .accordion-toggle{
-      width:100%;display:flex;align-items:center;justify-content:space-between;
+      width:100%;display:flex;align-items:center;gap:10px;
       background:none;border:none;padding:18px;font-size:15px;font-weight:700;color:#333;
-      cursor:pointer;text-align:left;
+      cursor:pointer;text-align:left;border-radius:calc(var(--radius) - 2px);
+      transition:background .18s ease,color .18s ease;
     }
-    .accordion-toggle:focus{outline:2px solid rgba(252,100,129,.4);outline-offset:-4px}
+    .accordion-toggle:focus{outline:2px solid rgba(252,100,129,.40);outline-offset:-4px}
+    .accordion-toggle:hover{background:rgba(252,100,129,.06); color:var(--accent)}
+    .accordion-toggle:hover .chevron{color:var(--accent)}
+    .accordion[data-open="true"] .accordion-toggle{background:rgba(252,100,129,.08); color:var(--accent)}
     .accordion-toggle .label{font-size:15px;color:inherit;margin:0}
     .accordion-body{padding:0 18px 18px 18px;border-top:1px solid var(--border);}
     .accordion[data-open="false"] .accordion-body{display:none}
-    .accordion .chevron{transition:transform .26s ease;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;color:var(--muted)}
-    .accordion[data-open="true"] .chevron{transform:rotate(180deg)}
+    .chevron{transition:transform .26s ease,color .18s ease;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;color:var(--muted)}
+    .chevron svg{display:block;width:18px;height:18px}
+    .accordion[data-open="true"] .chevron{transform:rotate(180deg); color:var(--accent)}
     @media (max-width:640px){
       .accordion-toggle{padding:16px}
       .accordion-body{padding:0 16px 16px 16px}
     }
+
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .col{flex:1 1 240px}
     .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
@@ -62,8 +70,8 @@
     #side.select-tall{
       -webkit-appearance:none; appearance:none;
       min-height:var(--control-h);
-      padding:10px 36px 10px 12px; /* vertical centering via padding */
-      line-height:1.2;             /* avoid Safari baseline quirks */
+      padding:10px 36px 10px 12px;
+      line-height:1.2;
       background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 6 5-6' stroke='%237A7A7A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
       background-repeat:no-repeat; background-position:right 12px center; background-size:14px;
     }
@@ -99,7 +107,6 @@
     @keyframes flash{ 0%{box-shadow:0 0 0 0 rgba(252,100,129,.0)} 30%{box-shadow:0 0 0 6px rgba(252,100,129,.25)} 100%{box-shadow:0 0 0 0 rgba(252,100,129,.0)} }
   </style>
 
-  <!-- Note: if your CMS minifier breaks this <link>, keep it exactly on one line -->
   <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 
   <div class="container">
@@ -152,8 +159,8 @@
       <!-- Account -->
       <div class="card span-4 accordion" data-open="true">
         <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8l4 4 4-4"/></svg></span>
           <span class="label">Account</span>
-          <span class="chevron" aria-hidden="true">⌃</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
           <div class="kpi" id="acct-equity">$—</div>
@@ -172,8 +179,8 @@
       <!-- Positions -->
       <div class="card span-8 accordion" data-open="true">
         <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8l4 4 4-4"/></svg></span>
           <span class="label">Open Positions</span>
-          <span class="chevron" aria-hidden="true">⌃</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
           <table class="table" id="positions-table">
@@ -184,11 +191,11 @@
         </div>
       </div>
 
-      <!-- Orders -->
-      <div class="card span-12 accordion" data-open="true">
-        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+      <!-- Orders (accordion closed by default) -->
+      <div class="card span-12 accordion" data-open="false">
+        <button class="accordion-toggle" type="button" aria-expanded="false" data-accordion-button>
+          <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8l4 4 4-4"/></svg></span>
           <span class="label">Recent Orders</span>
-          <span class="chevron" aria-hidden="true">⌃</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
           <table class="table" id="orders-table">
@@ -207,17 +214,14 @@
 
   <script>
   (function(){
-    /* ===== Config ===== */
     var ORIGIN    = window.location.origin || (window.location.protocol + "//" + window.location.host);
     var PROXY_URL = ORIGIN + "/wp-json/alpaca/v1";
 
-    /* ===== Utils ===== */
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
     function up(s){ return (s||"").replace(/\s+/g,"").toUpperCase(); }
     function debounce(fn,ms){ var t; return function(){ var a=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,a); }, ms); }; }
 
-    /* ===== API base ===== */
     function api(path, options){
       options = options || {};
       var method = (options.method || "GET").toUpperCase();
@@ -235,7 +239,6 @@
       });
     }
 
-    /* ===== Proxy check ===== */
     function checkProxy(){
       var labelEl = $("proxy-url-label"); if (labelEl) labelEl.textContent = PROXY_URL;
       var finished = false;
@@ -260,14 +263,12 @@
       });
     }
 
-    /* ===== API wrappers ===== */
     function getAccount(){ return api("/account"); }
     function getPositions(){ return api("/positions"); }
     function getOrders(){ return api("/orders?status=all&limit=25"); }
     function postOrder(payload){ return api("/orders",{method:"POST", body: JSON.stringify(payload)}); }
     function cancelOrder(id){ return api("/orders/"+encodeURIComponent(id), {method:"DELETE"}); }
 
-    /* ===== Renderers ===== */
     function renderAccount(){
       return getAccount().then(function(a){
         $("acct-equity").textContent = fmtCurrency(a.equity);
@@ -306,7 +307,11 @@
         list.forEach(function(o){
           var tr=document.createElement("tr");
           var when=new Date(o.submitted_at || o.created_at || Date.now()).toLocaleString();
-          tr.appendChild(td("Time",when)); tr.appendChild(td("Symbol",o.symbol)); tr.appendChild(td("Side",o.side)); tr.appendChild(td("Qty",o.qty)); tr.appendChild(td("Status",o.status));
+          tr.appendChild(td("Time",when));
+          tr.appendChild(td("Symbol",o.symbol));
+          tr.appendChild(td("Side",o.side));
+          tr.appendChild(td("Qty",o.qty));
+          tr.appendChild(td("Status",o.status));
           var act=document.createElement("td"); act.setAttribute("data-label","Action");
           var actions=document.createElement("div"); actions.className="actions";
           if(!(o.status||"").match(/^canceled/)){
@@ -316,7 +321,9 @@
               cancelOrder(o.id).then(renderOrders).catch(function(e){ alert("Cancel failed: "+e.message); }).finally(function(){ b.disabled=false; });
             };
             actions.appendChild(b);
-          } else { var s=document.createElement("span"); s.style.color="#9aa3ab"; s.textContent="Canceled"; actions.appendChild(s); }
+          } else {
+            var s=document.createElement("span"); s.style.color="#9aa3ab"; s.textContent="Canceled"; actions.appendChild(s);
+          }
           act.appendChild(actions); tr.appendChild(act); body.appendChild(tr);
         });
       }).catch(function(){
@@ -324,12 +331,7 @@
       });
     }
 
-    /* ===== Autocomplete ===== */
-    var AC_SEED = [
-      "AAPL","TSLA","NVDA","AMZN","GOOG","META","AMD","NFLX","ADBE","CRM","INTC","IBM",
-      "SHOP","UBER","SNOW","PANW","COIN","SQ","PYPL","BA","DIS","V","MA","JPM","BAC","WFC","C",
-      "ORCL","SAP","NOW","AVGO","QCOM","MU","TXN","ASML","NIO","BABA","PDD","JD","T","VZ"
-    ];
+    var AC_SEED = ["AAPL","TSLA","NVDA","AMZN","GOOG","META","AMD","NFLX","ADBE","CRM","INTC","IBM","SHOP","UBER","SNOW","PANW","COIN","SQ","PYPL","BA","DIS","V","MA","JPM","BAC","WFC","C","ORCL","SAP","NOW","AVGO","QCOM","MU","TXN","ASML","NIO","BABA","PDD","JD","T","VZ"];
     var acList = $("ac-list"), symInput = $("symbol");
     function acRender(items){
       acList.innerHTML=""; if(!items.length){ acList.style.display="none"; return; }
@@ -351,7 +353,6 @@
     symInput.addEventListener("blur", function(){ setTimeout(function(){ acList.style.display="none"; }, 140); });
     symInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); acList.style.display="none"; $("qty").focus(); } });
 
-    /* ===== iOS-safe scroll & focus on trade intent ===== */
     (function(){
       var placeCard = document.getElementById("placeCard");
       if (placeCard) placeCard.style.scrollMarginTop = "88px";
@@ -414,7 +415,6 @@
       }catch(_){}
     })();
 
-    /* ===== Actions ===== */
     function onPlace(){
       var symbol=up($("symbol").value);
       var side=$("side").value;
@@ -431,7 +431,6 @@
       }).then(function(){ $("placeOrder").disabled=false; });
     }
 
-    /* ===== Init ===== */
     function init(){
       checkProxy().then(function(ok){
         if(ok){ return Promise.all([renderAccount(),renderPositions(),renderOrders()]); }
@@ -452,11 +451,11 @@
       document.querySelectorAll('.accordion').forEach(function(card){
         var btn = card.querySelector('[data-accordion-button]');
         var panel = card.querySelector('[data-accordion-panel]');
-        var applyState = function(nextState){
-          card.setAttribute('data-open', nextState ? 'true' : 'false');
-          if(btn){ btn.setAttribute('aria-expanded', nextState ? 'true' : 'false'); }
-          if(panel){ panel.hidden = nextState ? false : true; }
-        };
+        function applyState(open){
+          card.setAttribute('data-open', open ? 'true' : 'false');
+          if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          if (panel) panel.hidden = open ? false : true;
+        }
         var initialOpen = card.getAttribute('data-open') !== 'false';
         applyState(initialOpen);
         if(btn){
