@@ -20,13 +20,15 @@
       display:flex;
       flex-wrap:wrap;
       gap:16px;
-      align-items:flex-start;
+      align-items:stretch;
       align-content:flex-start;
     }
     .grid>.card{
-      align-self:flex-start;
+      align-self:stretch;
       flex:1 1 100%;
       min-width:0;
+      display:flex;
+      flex-direction:column;
     }
     .span-4{flex:1 1 280px; max-width:calc(33.333% - 8px)}
     .span-6{flex:1 1 360px; max-width:calc(50% - 8px)}
@@ -68,11 +70,13 @@
     .accordion-toggle:hover .chevron{color:var(--accent)}
     .accordion[data-open="true"] .accordion-toggle{background:rgba(252,100,129,.08); color:var(--accent)}
     .accordion-toggle .label{font-size:15px;color:inherit;margin:0}
-    .accordion-body{padding:0 18px 18px 18px;border-top:1px solid var(--border);}
+    .accordion-body{padding:0 18px 18px 18px;border-top:1px solid var(--border);flex:1;display:flex;flex-direction:column;}
     .accordion[data-open="false"] .accordion-body{display:none}
     .chevron{transition:transform .26s ease,color .18s ease;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;color:var(--muted)}
     .chevron svg{display:block;width:22px;height:22px}
     .accordion[data-open="true"] .chevron{transform:rotate(90deg); color:var(--accent)}
+    .card-account .accordion-body .btn-secondary,
+    .card-positions .accordion-body .btn-secondary{margin-top:auto;}
     .card-account .accordion-toggle,
     .card-positions .accordion-toggle{background:#7A7A7A;color:#fff;}
     .card-account .accordion-toggle:hover,
