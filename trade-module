@@ -133,6 +133,9 @@
     }
 
     .kpi{font-size:22px;font-weight:700;color:#333} .kpi-label{font-size:12px;color:var(--muted);margin-top:2px}
+    .kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+    .kpi-item{display:flex;flex-direction:column;gap:4px}
+    @media(max-width:640px){.kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
 
     .table{width:100%;border-collapse:separate;border-spacing:0 10px}
     .table th{font-size:12px;text-align:left;color:#555;font-weight:700;padding:0 10px}
@@ -212,15 +215,20 @@
           <span class="label">Account</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
-          <div class="kpi" id="acct-equity">$—</div>
-          <div class="kpi-label">Equity</div>
-          <div style="height:8px"></div>
-          <div class="kpi" id="acct-cash">$—</div>
-          <div class="kpi-label">Cash</div>
-          <div style="height:8px"></div>
-          <div class="kpi" id="acct-ptv">$—</div>
-          <div class="kpi-label">Portfolio Value</div>
-          <div style="height:12px"></div>
+          <div class="kpi-row">
+            <div class="kpi-item">
+              <div class="kpi" id="acct-equity">$—</div>
+              <div class="kpi-label">Equity</div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi" id="acct-cash">$—</div>
+              <div class="kpi-label">Cash</div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi" id="acct-ptv">$—</div>
+              <div class="kpi-label">Portfolio Value</div>
+            </div>
+          </div>
           <button class="btn btn-secondary" id="refreshAccount" type="button">Refresh</button>
         </div>
       </div>
