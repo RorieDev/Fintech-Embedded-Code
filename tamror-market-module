@@ -170,6 +170,13 @@
       let times = Math.ceil(shell.clientWidth / lane.scrollWidth);
       if(times > 1) lane.innerHTML = Array(times).fill(base).join("");
     }
+    function restartAnimation(el){
+      if(!el) return;
+      el.style.animation = "none";
+      /* Force reflow so Safari restarts the ticker animation after async content fills in */
+      void el.offsetWidth;
+      el.style.animation = "";
+    }
     async function loadTicker(symbols){
       try{
         const rows=await fetchSnapshots(symbols);
@@ -183,7 +190,12 @@
         laneA.innerHTML = renderTicks(aRows.length ? aRows : rows);
         laneB.innerHTML = renderTicks(bRows.length ? bRows : rows);
 
-        requestAnimationFrame(()=>{ ensureFill(laneA, shell); ensureFill(laneB, shell); });
+        requestAnimationFrame(()=>{
+          ensureFill(laneA, shell);
+          ensureFill(laneB, shell);
+          restartAnimation(laneA);
+          restartAnimation(laneB);
+        });
 
         $("tickStatus").textContent="ok"; $("tickStatus").className="ok";
       }catch(e){
