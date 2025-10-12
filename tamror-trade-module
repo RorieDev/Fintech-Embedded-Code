@@ -337,8 +337,8 @@
         var li=document.createElement("div"); li.className="ac-item"; li.textContent=s;
         li.style.padding="8px 12px"; li.style.cursor="pointer";
         li.onclick=function(){ symInput.value=s; acList.style.display="none"; };
-        li.onmouseenter=function(){ li.style.background="#f6f8fb"; };
-        li.onmouseleave=function(){ li.style.background="#fff"; };
+        li.onmouseenter=function(){ li.style.background="#7A7A7A"; li.style.color="#fff"; };
+        li.onmouseleave=function(){ li.style.background="#fff"; li.style.color=""; };
         acList.appendChild(li);
       });
       acList.style.display="block";
