@@ -172,7 +172,7 @@
       <!-- Positions -->
       <div class="card span-8 accordion" data-open="true">
         <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
-          <span class="label">Caret &gt; Open Positions</span>
+          <span class="label">Open Positions</span>
           <span class="chevron" aria-hidden="true">⌃</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
@@ -185,12 +185,12 @@
       </div>
 
       <!-- Orders -->
-      <div class="card span-12 accordion" data-open="false">
-        <button class="accordion-toggle" type="button" aria-expanded="false" data-accordion-button>
-          <span class="label">Caret &gt; Recent Orders</span>
+      <div class="card span-12 accordion" data-open="true">
+        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="label">Recent Orders</span>
           <span class="chevron" aria-hidden="true">⌃</span>
         </button>
-        <div class="accordion-body" data-accordion-panel hidden>
+        <div class="accordion-body" data-accordion-panel>
           <table class="table" id="orders-table">
             <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead>
             <tbody></tbody>
