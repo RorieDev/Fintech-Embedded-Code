@@ -10,8 +10,8 @@
     .wrap{max-width:1100px;margin:0 auto;padding:20px}
 
     /* Ticker */
-    .ticker-shell{position:relative; overflow:hidden; height:46px; border:1px solid var(--border); border-radius:14px; background:var(--surface); box-shadow:var(--shadow)}
-    .lane{position:absolute; top:0; left:0; display:flex; gap:28px; white-space:nowrap; padding:10px 16px}
+    .ticker-shell{position:relative; overflow:hidden; height:58px; border:1px solid var(--border); border-radius:14px; background:var(--surface); box-shadow:var(--shadow)}
+    .lane{position:absolute; top:0; left:0; display:flex; align-items:center; gap:28px; white-space:nowrap; padding:12px 16px}
     .laneA{animation:slideA 35s linear infinite}
     .laneB{animation:slideB 35s linear infinite}
     @keyframes slideA{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
