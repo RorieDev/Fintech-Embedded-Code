@@ -20,6 +20,23 @@
 
     .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
     .h2{font-size:16px;font-weight:700;margin:0 0 10px 0;color:#333}
+    .accordion{padding:0;overflow:hidden}
+    .accordion + .accordion{margin-top:0}
+    .accordion-toggle{
+      width:100%;display:flex;align-items:center;justify-content:space-between;
+      background:none;border:none;padding:18px;font-size:15px;font-weight:700;color:#333;
+      cursor:pointer;text-align:left;
+    }
+    .accordion-toggle:focus{outline:2px solid rgba(252,100,129,.4);outline-offset:-4px}
+    .accordion-toggle .label{font-size:15px;color:inherit;margin:0}
+    .accordion-body{padding:0 18px 18px 18px;border-top:1px solid var(--border);}
+    .accordion[data-open="false"] .accordion-body{display:none}
+    .accordion .chevron{transition:transform .26s ease;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;color:var(--muted)}
+    .accordion[data-open="true"] .chevron{transform:rotate(180deg)}
+    @media (max-width:640px){
+      .accordion-toggle{padding:16px}
+      .accordion-body{padding:0 16px 16px 16px}
+    }
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .col{flex:1 1 240px}
     .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
@@ -133,38 +150,53 @@
       </div>
 
       <!-- Account -->
-      <div class="card span-4">
-        <div class="h2">Account</div>
-        <div class="kpi" id="acct-equity">$—</div>
-        <div class="kpi-label">Equity</div>
-        <div style="height:8px"></div>
-        <div class="kpi" id="acct-cash">$—</div>
-        <div class="kpi-label">Cash</div>
-        <div style="height:8px"></div>
-        <div class="kpi" id="acct-ptv">$—</div>
-        <div class="kpi-label">Portfolio Value</div>
-        <div style="height:12px"></div>
-        <button class="btn btn-secondary" id="refreshAccount" type="button">Refresh</button>
+      <div class="card span-4 accordion" data-open="true">
+        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="label">Account</span>
+          <span class="chevron" aria-hidden="true">⌃</span>
+        </button>
+        <div class="accordion-body" data-accordion-panel>
+          <div class="kpi" id="acct-equity">$—</div>
+          <div class="kpi-label">Equity</div>
+          <div style="height:8px"></div>
+          <div class="kpi" id="acct-cash">$—</div>
+          <div class="kpi-label">Cash</div>
+          <div style="height:8px"></div>
+          <div class="kpi" id="acct-ptv">$—</div>
+          <div class="kpi-label">Portfolio Value</div>
+          <div style="height:12px"></div>
+          <button class="btn btn-secondary" id="refreshAccount" type="button">Refresh</button>
+        </div>
       </div>
 
       <!-- Positions -->
-      <div class="card span-8">
-        <div class="h2">Open Positions</div>
-        <table class="table" id="positions-table">
-          <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Price</th><th>Mkt Value</th><th>Unrealized P/L</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <button class="btn btn-secondary" id="refreshPositions" type="button">Refresh</button>
+      <div class="card span-8 accordion" data-open="true">
+        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="label">Open Positions</span>
+          <span class="chevron" aria-hidden="true">⌃</span>
+        </button>
+        <div class="accordion-body" data-accordion-panel>
+          <table class="table" id="positions-table">
+            <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Price</th><th>Mkt Value</th><th>Unrealized P/L</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <button class="btn btn-secondary" id="refreshPositions" type="button">Refresh</button>
+        </div>
       </div>
 
       <!-- Orders -->
-      <div class="card span-12">
-        <div class="h2">Recent Orders</div>
-        <table class="table" id="orders-table">
-          <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <button class="btn btn-secondary" id="refreshOrders" type="button">Refresh</button>
+      <div class="card span-12 accordion" data-open="true">
+        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="label">Recent Orders</span>
+          <span class="chevron" aria-hidden="true">⌃</span>
+        </button>
+        <div class="accordion-body" data-accordion-panel>
+          <table class="table" id="orders-table">
+            <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <button class="btn btn-secondary" id="refreshOrders" type="button">Refresh</button>
+        </div>
       </div>
     </div>
 
@@ -416,6 +448,24 @@
       $("refreshAccount").addEventListener("click", renderAccount);
       $("refreshPositions").addEventListener("click", renderPositions);
       $("refreshOrders").addEventListener("click", renderOrders);
+
+      document.querySelectorAll('.accordion').forEach(function(card){
+        var btn = card.querySelector('[data-accordion-button]');
+        var panel = card.querySelector('[data-accordion-panel]');
+        var applyState = function(nextState){
+          card.setAttribute('data-open', nextState ? 'true' : 'false');
+          if(btn){ btn.setAttribute('aria-expanded', nextState ? 'true' : 'false'); }
+          if(panel){ panel.hidden = nextState ? false : true; }
+        };
+        var initialOpen = card.getAttribute('data-open') !== 'false';
+        applyState(initialOpen);
+        if(btn){
+          btn.addEventListener('click', function(){
+            var isOpen = card.getAttribute('data-open') !== 'false';
+            applyState(!isOpen);
+          });
+        }
+      });
     }
     document.addEventListener("DOMContentLoaded", init);
   })();
