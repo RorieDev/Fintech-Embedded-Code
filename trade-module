@@ -141,6 +141,21 @@
     .table th{font-size:12px;text-align:left;color:#555;font-weight:700;padding:0 10px}
     .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
+
+    .card-total-summary{display:flex;flex-direction:column;gap:12px}
+    .card-total-summary .summary-title{font-weight:700;font-size:16px;color:#333}
+    .card-total-summary .summary-note{font-size:12px;color:var(--muted)}
+    .total-summary{width:100%;border-collapse:collapse}
+    .total-summary td{padding:10px 14px;border:1px solid var(--border);background:#fff}
+    .total-summary td.label{font-weight:600;color:#555}
+    .total-summary td.value{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:#333}
+    .total-summary .total-row td{background:var(--surface-2);font-weight:800}
+    @media (max-width:680px){
+      .total-summary tr{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+      .total-summary td{border:none;border-bottom:1px solid var(--border)}
+      .total-summary td:last-child{border-bottom:none}
+      .total-summary td.value{text-align:left}
+    }
     @media (max-width:640px){
       .table thead{display:none}
       .table tr{display:block;margin:0 0 12px 0;border-radius:12px;overflow:hidden}
@@ -233,6 +248,28 @@
         </div>
       </div>
 
+      <!-- Total Portfolio Summary -->
+      <div class="card span-12 card-total-summary" id="totalSummaryCard">
+        <div class="summary-title">Total Portfolio Value</div>
+        <table class="total-summary" aria-live="polite">
+          <tbody>
+            <tr>
+              <td class="label">Account Portfolio Value</td>
+              <td class="value" id="tp-account">$—</td>
+            </tr>
+            <tr>
+              <td class="label">Physical Assets Total</td>
+              <td class="value" id="tp-physical">$—</td>
+            </tr>
+            <tr class="total-row">
+              <td class="label">Combined Total</td>
+              <td class="value" id="tp-total">$—</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="summary-note">Sum of the account portfolio value and the total value of physical assets.</div>
+      </div>
+
       <!-- Positions -->
       <div class="card span-12 accordion card-positions" data-open="true">
         <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
@@ -276,6 +313,22 @@
 
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
+    var lastAccountPortfolio = null;
+    var lastPhysicalTotal = null;
+    function toValidNumber(n){ var num = Number(n); return isFinite(num) ? num : null; }
+    function updateTotalSummary(){
+      var accountEl = $("tp-account"), physicalEl = $("tp-physical"), totalEl = $("tp-total");
+      if(!accountEl || !physicalEl || !totalEl){ return; }
+      var accountVal = toValidNumber(lastAccountPortfolio);
+      var physicalVal = toValidNumber(lastPhysicalTotal);
+      accountEl.textContent = fmtCurrency(accountVal);
+      physicalEl.textContent = fmtCurrency(physicalVal);
+      if(accountVal==null || physicalVal==null){
+        totalEl.textContent = "—";
+      } else {
+        totalEl.textContent = fmtCurrency(accountVal + physicalVal);
+      }
+    }
     function toSymbols(input){
       var seen = {};
       return (input || "")
@@ -341,17 +394,26 @@
       return getAccount().then(function(a){
         $("acct-equity").textContent = fmtCurrency(a.equity);
         $("acct-cash").textContent   = fmtCurrency(a.cash);
-        $("acct-ptv").textContent    = fmtCurrency(a.portfolio_value || a.equity);
+        var portfolio = (a && a.portfolio_value!=null) ? a.portfolio_value : a.equity;
+        $("acct-ptv").textContent    = fmtCurrency(portfolio);
+        lastAccountPortfolio = toValidNumber(portfolio);
+        updateTotalSummary();
       }).catch(function(){
         $("acct-equity").textContent = "—"; $("acct-cash").textContent = "—"; $("acct-ptv").textContent = "—";
+        lastAccountPortfolio = null;
+        updateTotalSummary();
       });
     }
     function td(label,value){ var td=document.createElement("td"); td.setAttribute("data-label",label); td.textContent=value; return td; }
     function renderPositions(){
       var body=document.querySelector("#positions-table tbody"); body.innerHTML="";
       return getPositions().then(function(list){
+        var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr); return;
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          lastPhysicalTotal = 0;
+          updateTotalSummary();
+          return;
         }
         list.forEach(function(p){
           var tr=document.createElement("tr");
@@ -361,9 +423,15 @@
           tr.appendChild(td("Mkt Value",fmtCurrency(p.market_value)));
           tr.appendChild(td("Unrealized P/L",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
+          var mv = toValidNumber(p.market_value);
+          if(mv!=null){ total += mv; }
         });
+        lastPhysicalTotal = total;
+        updateTotalSummary();
       }).catch(function(){
         var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="Failed to load positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        lastPhysicalTotal = null;
+        updateTotalSummary();
       });
     }
     function renderOrders(){
