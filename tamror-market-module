@@ -17,7 +17,7 @@
     @keyframes slideA{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
     @keyframes slideB{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
     .tick{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border)}
-    .tick-symbol{font-weight:800;color:#333}
+    .tick-symbol{font-weight:800;color:#333;padding-bottom:2px}
     .tick-price{font-weight:700}
     .up{color:var(--ok)} .down{color:var(--bad)}
 
