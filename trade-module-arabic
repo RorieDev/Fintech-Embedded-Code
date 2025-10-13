@@ -176,47 +176,47 @@
   <div class="container">
     <div class="header">
       <div class="brand">
-        <div class="title">TamRor · Paper Trading</div>
-        <div style="color:var(--muted);font-size:13px">Alpaca sandbox · Proof of Concept</div>
+        <div class="title">TamRor · التداول التجريبي</div>
+        <div style="color:var(--muted);font-size:13px">بيئة Alpaca التجريبية · إثبات مفهوم</div>
       </div>
       <div class="status">
-        <span class="pill"><span class="dot" id="conn-dot"></span> <span id="conn-text">Checking proxy…</span></span>
-        <span class="pill">Environment: Paper</span>
+        <span class="pill"><span class="dot" id="conn-dot"></span> <span id="conn-text">جارٍ التحقق من الوكيل…</span></span>
+        <span class="pill">البيئة: تجريبية</span>
       </div>
     </div>
 
     <div id="proxy-note" class="notice">
-      <b>Action needed:</b> configure the server proxy at <code id="proxy-url-label"></code>. Never expose API keys in the browser.
+      <b>إجراء مطلوب:</b> قم بإعداد وكيل الخادم عند <code id="proxy-url-label"></code>. لا تفصح مطلقًا عن مفاتيح الـAPI في المتصفح.
     </div>
 
     <div class="grid">
       <!-- Order ticket -->
       <div class="card span-12" id="placeCard">
-        <div class="h2">Place Order</div>
+        <div class="h2">تنفيذ أمر</div>
         <div class="row">
           <div class="col">
-            <label class="label">Symbol</label>
+            <label class="label">الرمز</label>
             <div class="ac-wrap" style="position:relative">
               <input class="input" id="symbol" placeholder="AAPL / TSLA / NVDA" autocomplete="off"/>
               <div id="ac-list" style="position:absolute;z-index:20;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);max-height:260px;overflow:auto;display:none"></div>
             </div>
           </div>
           <div class="col">
-            <label class="label">Side</label>
+            <label class="label">نوع الصفقة</label>
             <select class="input select-tall" id="side">
-              <option value="buy">Buy</option>
-              <option value="sell">Sell</option>
+              <option value="buy">شراء</option>
+              <option value="sell">بيع</option>
             </select>
           </div>
           <div class="col">
-            <label class="label">Quantity</label>
+            <label class="label">الكمية</label>
             <input class="input" id="qty" type="number" min="1" step="1" value="1" />
           </div>
           <div class="col actions-col">
-            <button class="btn" id="placeOrder" type="button">Submit Market Order</button>
+            <button class="btn" id="placeOrder" type="button">إرسال أمر سوقي</button>
           </div>
         </div>
-        <div class="helper">Type: <b>market</b> · Time in force: <b>day</b> · Separate multiple symbols with <b>/</b>, <b>,</b>, or spaces.</div>
+        <div class="helper">النوع: <b>market</b> · مدة التنفيذ: <b>day</b> · افصل بين عدة رموز باستخدام <b>/</b> أو <b>,</b> أو مسافات.</div>
         <div id="order-result" class="order-result"></div>
       </div>
 
@@ -224,24 +224,24 @@
       <div class="card span-12 accordion card-account" data-open="true">
         <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
           <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
-          <span class="label">Account</span>
+          <span class="label">الحساب</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
           <div class="kpi-row">
             <div class="kpi-item">
               <div class="kpi" id="acct-equity">$—</div>
-              <div class="kpi-label">Equity</div>
+              <div class="kpi-label">حقوق الملكية</div>
             </div>
             <div class="kpi-item">
               <div class="kpi" id="acct-cash">$—</div>
-              <div class="kpi-label">Cash</div>
+              <div class="kpi-label">النقد</div>
             </div>
             <div class="kpi-item">
               <div class="kpi" id="acct-ptv">$—</div>
-              <div class="kpi-label">Portfolio Value</div>
+              <div class="kpi-label">قيمة المحفظة</div>
             </div>
           </div>
-          <button class="btn btn-secondary" id="refreshAccount" type="button">Refresh</button>
+          <button class="btn btn-secondary" id="refreshAccount" type="button">تحديث</button>
         </div>
       </div>
 
@@ -249,39 +249,39 @@
       <div class="card span-12 card-total-summary" id="totalSummaryCard">
         <div class="summary-header">
           <span class="summary-chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
-          <div class="summary-title">Total Portfolio Value</div>
+          <div class="summary-title">إجمالي قيمة المحفظة</div>
         </div>
         <table class="total-summary" aria-live="polite">
           <tbody>
             <tr>
-              <td class="label">Account Portfolio Value</td>
+              <td class="label">قيمة محفظة الحساب</td>
               <td class="value" id="tp-account">$—</td>
             </tr>
             <tr>
-              <td class="label">Physical Assets Total</td>
+              <td class="label">إجمالي الأصول المادية</td>
               <td class="value" id="tp-physical">$—</td>
             </tr>
             <tr class="total-row">
-              <td class="label">Combined Total</td>
+              <td class="label">الإجمالي الموحّد</td>
               <td class="value" id="tp-total">$—</td>
             </tr>
           </tbody>
         </table>
-        <div class="summary-note">Sum of the account portfolio value and the total value of physical assets.</div>
+        <div class="summary-note">مجموع قيمة محفظة الحساب وإجمالي قيمة الأصول المادية.</div>
       </div>
 
       <!-- Positions -->
       <div class="card span-12 accordion card-positions" data-open="true">
         <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
           <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
-          <span class="label">Open Positions</span>
+          <span class="label">المراكز المفتوحة</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
           <table class="table" id="positions-table">
-            <thead><tr><th>Symbol</th><th>Qty</th><th>Avg Price</th><th>Mkt Value</th><th>Unrealized P/L</th></tr></thead>
+            <thead><tr><th>الرمز</th><th>الكمية</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
             <tbody></tbody>
           </table>
-          <button class="btn btn-secondary" id="refreshPositions" type="button">Refresh</button>
+          <button class="btn btn-secondary" id="refreshPositions" type="button">تحديث</button>
         </div>
       </div>
 
@@ -289,20 +289,20 @@
       <div class="card span-12 accordion" data-open="false">
         <button class="accordion-toggle" type="button" aria-expanded="false" data-accordion-button>
           <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
-          <span class="label">Recent Orders</span>
+          <span class="label">الطلبات الأخيرة</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
           <table class="table" id="orders-table">
-            <thead><tr><th>Time</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>الوقت</th><th>الرمز</th><th>النوع</th><th>الكمية</th><th>الحالة</th><th>إجراء</th></tr></thead>
             <tbody></tbody>
           </table>
-          <button class="btn btn-secondary" id="refreshOrders" type="button">Refresh</button>
+          <button class="btn btn-secondary" id="refreshOrders" type="button">تحديث</button>
         </div>
       </div>
     </div>
 
     <div class="helper" style="margin-top:12px">
-      Proxy forwards to <code>https://paper-api.alpaca.markets/v2/*</code>.
+      الوكيل يوجّه إلى <code>https://paper-api.alpaca.markets/v2/*</code>.
     </div>
   </div>
 
@@ -366,7 +366,7 @@
       var watchdog = setTimeout(function(){
         if (finished) return;
         finished = true;
-        $("conn-text").textContent = "Disconnected (timeout)";
+        $("conn-text").textContent = "انقطع الاتصال (انتهت المهلة)";
         $("conn-dot").style.background = "#f59e0b";
         $("proxy-note").classList.add("show");
       }, 6000);
@@ -375,11 +375,11 @@
         return res.text().then(function(txt){
           if(!res.ok){ throw new Error("HTTP "+res.status+" "+res.statusText); }
           try{ var j = JSON.parse(txt); if(!j || j.ok !== true){ throw new Error("Ping not ok:true"); } }catch(e){}
-          if (!finished){ finished = true; clearTimeout(watchdog); $("conn-text").textContent = "Connected"; $("conn-dot").style.background = "var(--accent)"; }
+          if (!finished){ finished = true; clearTimeout(watchdog); $("conn-text").textContent = "متصل"; $("conn-dot").style.background = "var(--accent)"; }
           return true;
         });
       }).catch(function(){
-        if (!finished){ finished = true; clearTimeout(watchdog); $("conn-text").textContent = "Disconnected"; $("conn-dot").style.background = "#f59e0b"; $("proxy-note").classList.add("show"); }
+        if (!finished){ finished = true; clearTimeout(watchdog); $("conn-text").textContent = "غير متصل"; $("conn-dot").style.background = "#f59e0b"; $("proxy-note").classList.add("show"); }
         return false;
       });
     }
@@ -410,18 +410,18 @@
       return getPositions().then(function(list){
         var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
           lastPhysicalTotal = 0;
           updateTotalSummary();
           return;
         }
         list.forEach(function(p){
           var tr=document.createElement("tr");
-          tr.appendChild(td("Symbol",p.symbol));
-          tr.appendChild(td("Qty",Number(p.qty).toLocaleString()));
-          tr.appendChild(td("Avg Price",fmtCurrency(p.avg_entry_price)));
-          tr.appendChild(td("Mkt Value",fmtCurrency(p.market_value)));
-          tr.appendChild(td("Unrealized P/L",fmtCurrency(p.unrealized_pl)));
+          tr.appendChild(td("الرمز",p.symbol));
+          tr.appendChild(td("الكمية",Number(p.qty).toLocaleString()));
+          tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
+          tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
+          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
           var mv = toValidNumber(p.market_value);
           if(mv!=null){ total += mv; }
@@ -429,7 +429,7 @@
         lastPhysicalTotal = total;
         updateTotalSummary();
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="Failed to load positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
         lastPhysicalTotal = null;
         updateTotalSummary();
       });
@@ -438,32 +438,32 @@
       var body=document.querySelector("#orders-table tbody"); body.innerHTML="";
       return getOrders().then(function(list){
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="No recent orders."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr); return;
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="لا توجد طلبات حديثة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr); return;
         }
         list.forEach(function(o){
           var tr=document.createElement("tr");
           var when=new Date(o.submitted_at || o.created_at || Date.now()).toLocaleString();
-          tr.appendChild(td("Time",when));
-          tr.appendChild(td("Symbol",o.symbol));
-          tr.appendChild(td("Side",o.side));
-          tr.appendChild(td("Qty",o.qty));
-          tr.appendChild(td("Status",o.status));
-          var act=document.createElement("td"); act.setAttribute("data-label","Action");
+          tr.appendChild(td("الوقت",when));
+          tr.appendChild(td("الرمز",o.symbol));
+          tr.appendChild(td("النوع",o.side));
+          tr.appendChild(td("الكمية",o.qty));
+          tr.appendChild(td("الحالة",o.status));
+          var act=document.createElement("td"); act.setAttribute("data-label","إجراء");
           var actions=document.createElement("div"); actions.className="actions";
           if(!(o.status||"").match(/^canceled/)){
-            var b=document.createElement("button"); b.className="btn btn-secondary"; b.textContent="Cancel";
+            var b=document.createElement("button"); b.className="btn btn-secondary"; b.textContent="إلغاء";
             b.onclick=function(){
               b.disabled=true;
-              cancelOrder(o.id).then(renderOrders).catch(function(e){ alert("Cancel failed: "+e.message); }).finally(function(){ b.disabled=false; });
+              cancelOrder(o.id).then(renderOrders).catch(function(e){ alert("فشل الإلغاء: "+e.message); }).finally(function(){ b.disabled=false; });
             };
             actions.appendChild(b);
           } else {
-            var s=document.createElement("span"); s.style.color="#9aa3ab"; s.textContent="Canceled"; actions.appendChild(s);
+            var s=document.createElement("span"); s.style.color="#9aa3ab"; s.textContent="تم الإلغاء"; actions.appendChild(s);
           }
           act.appendChild(actions); tr.appendChild(act); body.appendChild(tr);
         });
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="Failed to load orders."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="فشل تحميل الطلبات."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
       });
     }
 
@@ -555,17 +555,17 @@
       var symbols=toSymbols($("symbol").value);
       var side=$("side").value;
       var qty=parseInt($("qty").value,10);
-      if(!symbols.length){ alert("Enter symbol(s) (e.g., AAPL)."); return; }
-      if(!(qty>0)){ alert("Quantity must be > 0."); return; }
+      if(!symbols.length){ alert("أدخل رمزًا أو أكثر (مثل AAPL)."); return; }
+      if(!(qty>0)){ alert("يجب أن تكون الكمية أكبر من 0."); return; }
       var orderBtn=$("placeOrder");
       var resultEl=$("order-result");
-      orderBtn.disabled=true; resultEl.textContent="Placing order…";
+      orderBtn.disabled=true; resultEl.textContent="جارٍ إرسال الأمر…";
       var success=[]; var failures=[]; var refreshNeeded=false;
 
       function submitNext(index){
         if(index>=symbols.length){ return Promise.resolve(); }
         var sym=symbols[index];
-        resultEl.textContent="Placing order for "+sym+"…";
+        resultEl.textContent="جارٍ إرسال أمر لـ "+sym+"…";
         var payload={symbol:sym, side:side, type:"market", time_in_force:"day", qty:String(qty)};
         return postOrder(payload).then(function(resp){
           refreshNeeded=true;
@@ -577,21 +577,21 @@
 
       submitNext(0).then(function(){
         var parts=[];
-        if(success.length){ parts.push((success.length>1?"Orders":"Order")+" submitted: "+success.join(", ")); }
-        if(failures.length){ parts.push((failures.length>1?"Errors":"Error")+": "+failures.join(" · ")); }
-        if(!parts.length){ parts.push("No orders submitted."); }
+        if(success.length){ parts.push((success.length>1?"تم إرسال الطلبات: ":"تم إرسال الطلب: ")+success.join("، ")); }
+        if(failures.length){ parts.push((failures.length>1?"الأخطاء":"الخطأ")+": "+failures.join(" · ")); }
+        if(!parts.length){ parts.push("لم يتم إرسال أي أوامر."); }
         resultEl.textContent=parts.join(" · ");
-        if(failures.length){ alert((failures.length>1?"Some orders failed: ":"Order failed: ")+failures.join(" · ")); }
+        if(failures.length){ alert((failures.length>1?"فشلت بعض الأوامر: ":"فشل الأمر: ")+failures.join(" · ")); }
         if(refreshNeeded){
           return Promise.all([renderAccount(),renderPositions(),renderOrders()]).catch(function(e){
-            var extra="Refresh failed: "+e.message;
+            var extra="فشل التحديث: "+e.message;
             resultEl.textContent = resultEl.textContent ? resultEl.textContent+" · "+extra : extra;
             alert(extra);
           });
         }
       }).catch(function(e){
-        resultEl.textContent="Error: "+e.message;
-        alert("Order failed: "+e.message);
+        resultEl.textContent="خطأ: "+e.message;
+        alert("فشل الأمر: "+e.message);
       }).finally(function(){ orderBtn.disabled=false; });
     }
 
@@ -600,8 +600,8 @@
         if(ok){ return Promise.all([renderAccount(),renderPositions(),renderOrders()]); }
       }).catch(function(e){
         var t=$("conn-text");
-        if(t && /Checking/.test(t.textContent)){
-          t.textContent="Disconnected (init error)";
+        if(t && /(Checking|جارٍ التحقق)/.test(t.textContent)){
+          t.textContent="انقطع الاتصال (خطأ عند البدء)";
           $("conn-dot").style.background="#f59e0b";
           $("proxy-note").classList.add("show");
         }
