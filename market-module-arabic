@@ -71,14 +71,14 @@
 
   <div class="wrap">
     <!-- Ticker -->
-    <div class="ticker-shell" aria-label="market ticker">
+    <div class="ticker-shell" aria-label="شريط السوق">
       <div id="laneA" class="lane laneA"></div>
       <div id="laneB" class="lane laneB"></div>
     </div>
 
     <!-- Heatmap -->
     <div class="card">
-      <div class="head"><div class="title">Performance Heatmap</div></div>
+      <div class="head"><div class="title">خريطة الأداء الحرارية</div></div>
       <div id="heatGrid" class="heat-grid"></div>
     </div>
 
@@ -90,7 +90,7 @@
     </div>
 
     <div class="status">
-      <div><b>Ticker:</b> <span id="tickStatus">waiting…</span> · <b>Data:</b> Alpaca IEX · <b>Proxy:</b> <span id="proxyBase">/wp-json/alpaca/v1</span></div>
+      <div><b>شريط الأسعار:</b> <span id="tickStatus">جارٍ الانتظار…</span> · <b>البيانات:</b> Alpaca IEX · <b>الخادم الوسيط:</b> <span id="proxyBase">/wp-json/alpaca/v1</span></div>
     </div>
   </div>
 
@@ -197,9 +197,9 @@
           restartAnimation(laneB);
         });
 
-        $("tickStatus").textContent="ok"; $("tickStatus").className="ok";
+        $("tickStatus").textContent="جاهز"; $("tickStatus").className="ok";
       }catch(e){
-        $("tickStatus").textContent="error"; $("tickStatus").className="err";
+        $("tickStatus").textContent="خطأ"; $("tickStatus").className="err";
       }
     }
 
@@ -311,10 +311,10 @@
       const have = HELD.has(String(r.s).toUpperCase());
 
       /* Always render two buttons; when not held, Sell is a hidden "ghost" to reserve space */
-      const buyBtn  = `<button class="btn" type="button" onclick="tamrorEmitTrade('${r.s}','buy')">Buy ${r.s}</button>`;
+      const buyBtn  = `<button class="btn" type="button" onclick="tamrorEmitTrade('${r.s}','buy')">شراء ${r.s}</button>`;
       const sellBtn = have
-        ? `<button class="btn btn-secondary" type="button" onclick="tamrorEmitTrade('${r.s}','sell')">Sell ${r.s}</button>`
-        : `<button class="btn btn-secondary ghost" type="button" aria-hidden="true" tabindex="-1">Sell ${r.s}</button>`;
+        ? `<button class="btn btn-secondary" type="button" onclick="tamrorEmitTrade('${r.s}','sell')">بيع ${r.s}</button>`
+        : `<button class="btn btn-secondary ghost" type="button" aria-hidden="true" tabindex="-1">بيع ${r.s}</button>`;
 
       return `<div class="hero-slide">
         <div class="hero-left">
