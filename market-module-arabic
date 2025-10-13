@@ -1,0 +1,400 @@
+<!-- TamRor · Arabic Market Showcase (Ticker + Heatmap + Hero) · Mobile-safe scroll-to-trade, steady slide height, fonts fix) -->
+<div id="tamror-market-extras">
+  <style>
+    :root{
+      --bg:#ffffff; --text:#7A7A7A; --muted:#9aa3ab; --accent:#FC6481; --accent-600:#e55773;
+      --border:#e7edf4; --surface:#ffffff; --surface-2:#f6f8fb; --shadow:0 6px 24px rgba(16,24,40,.06);
+      --bad:#ef4444; --ok:#16a34a; --control-h:44px;
+    }
+    #tamror-market-extras{background:var(--bg);color:var(--text);font-family:"Work Sans",system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+
+    /* Ticker */
+    .ticker-shell{position:relative; overflow:hidden; height:58px; border:1px solid var(--border); border-radius:14px; background:var(--surface); box-shadow:var(--shadow)}
+    .lane{position:absolute; top:0; bottom:0; left:0; display:flex; align-items:center; gap:28px; white-space:nowrap; padding:12px 16px}
+    .laneA{animation:slideA 35s linear infinite}
+    .laneB{animation:slideB 35s linear infinite}
+    @keyframes slideA{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
+    @keyframes slideB{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
+    .tick{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border)}
+    .tick-symbol{font-weight:800;color:#333;padding-bottom:2px}
+    .tick-price{font-weight:700}
+    .up{color:var(--ok)} .down{color:var(--bad)}
+
+    /* Cards / Head */
+    .card{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+    .head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .title{font-weight:800;color:#333}
+    .chg-neg{color:var(--bad);font-weight:700}
+    .chg-pos{color:var(--ok);font-weight:700}
+
+    /* Heatmap */
+    .heat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+    @media (max-width:900px){ .heat-grid{grid-template-columns:repeat(3,1fr)} }
+    @media (max-width:640px){ .heat-grid{grid-template-columns:repeat(2,1fr)} }
+    .heat-tile{position:relative;border-radius:16px;border:1px solid var(--border);padding:10px 12px;overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.02) 100%)}
+    .heat-head{display:flex;justify-content:space-between;align-items:center}
+    .heat-sym{font-weight:800;color:#333}
+    .heat-delta{font-weight:800}
+    .heat-spark{height:42px;margin-top:6px}
+    .glow{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 2px rgba(0,0,0,0)}
+
+    /* Hero Carousel */
+    .hero{position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#fff, #f9fbff)}
+    .hero-slide{display:none;align-items:center;gap:16px;padding:18px}
+    .hero-slide.active{display:flex;animation:fadeIn .5s ease}
+    @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+    .hero-left{flex:1 1 40%}
+    .hero-right{flex:1 1 60%}
+    .hero-price{font-size:34px;font-weight:800;color:#333}
+    .hero-delta{font-size:18px;font-weight:800;margin-left:10px}
+    .hero-chart{width:100%;height:160px}
+
+    /* CTA: keep height steady across slides (avoid mobile judder) */
+    .hero-cta{margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; min-height:var(--control-h)}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(252,100,129,.35); min-height:var(--control-h)}
+    .btn:hover{background:var(--accent-600)}
+    .btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border);box-shadow:none}
+    .btn.ghost{visibility:hidden; pointer-events:none} /* reserves space when Sell is absent */
+
+    .progress{position:absolute;left:0;top:0;height:4px;background:var(--accent);width:0;transition:width .2s linear}
+    .hero-nav{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
+    .dot{width:8px;height:8px;border-radius:50%;background:#dbe2ea}
+    .dot.active{background:var(--accent)}
+
+    .status{margin-top:10px;font-size:12px;color:#555;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px}
+    .status b{color:#333} .ok{color:#16a34a;font-weight:800} .err{color:#ef4444;font-weight:800}
+  </style>
+
+  <!-- Fix “Named entity expected got none” by escaping & as &amp; and keeping on a single line -->
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet" />
+
+  <div class="wrap">
+    <!-- Ticker -->
+    <div class="ticker-shell" aria-label="market ticker">
+      <div id="laneA" class="lane laneA"></div>
+      <div id="laneB" class="lane laneB"></div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="card">
+      <div class="head"><div class="title">Performance Heatmap</div></div>
+      <div id="heatGrid" class="heat-grid"></div>
+    </div>
+
+    <!-- Hero Carousel -->
+    <div class="card hero" id="heroCard">
+      <div id="heroProgress" class="progress"></div>
+      <div id="heroSlides"></div>
+      <div id="heroNav" class="hero-nav"></div>
+    </div>
+
+    <div class="status">
+      <div><b>Ticker:</b> <span id="tickStatus">waiting…</span> · <b>Data:</b> Alpaca IEX · <b>Proxy:</b> <span id="proxyBase">/wp-json/alpaca/v1</span></div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== Config ===== */
+    const PROXY_BASE = "/wp-json/alpaca/v1";
+    const DEFAULT_WATCH = ["AAPL","TSLA","NVDA","GOOG","META","ORCL"]; // 6 symbols
+    const TICKER_REFRESH_MS = 30000;
+    const HERO_ROTATE_MS = 6000;
+    const POSITIONS_REFRESH_MS = 30000;
+    const HEADER_OFFSET = 88; // keep Place Order card fully visible under sticky headers
+
+    /* ===== Helpers ===== */
+    const $ = (id)=>document.getElementById(id);
+    const fmt = (n,d=2)=> (n==null||isNaN(+n) ? "—" : (+n).toFixed(d));
+    const isoDaysAgo = (n)=> new Date(Date.now() - n*24*3600*1000).toISOString();
+    $("proxyBase").textContent = PROXY_BASE;
+
+    async function api(path, q={}){
+      const qs = Object.entries(q).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+      const url = `${PROXY_BASE}${path}${qs?("?"+qs):""}`;
+      const r = await fetch(url, {cache:"no-store"}); const txt = await r.text();
+      if(!r.ok){ throw new Error(txt || r.statusText); }
+      try { return JSON.parse(txt); } catch { return txt; }
+    }
+    const getSnapshot = (symbol)=> api(`/market/snapshot/${encodeURIComponent(symbol)}`);
+    const getPositions = ()=> api(`/positions`);
+
+    function getBars(symbol, timeframe){
+      const isDaily = timeframe==="1Day";
+      return api(`/market/bars/${encodeURIComponent(symbol)}`, {
+        timeframe, feed:"iex", adjustment:"split",
+        limit: isDaily ? 365 : 600,
+        start: isDaily ? isoDaysAgo(420) : isoDaysAgo(7)
+      });
+    }
+    async function fetchSnapshots(symbols){
+      const out = [];
+      await Promise.all(symbols.map(async s=>{
+        try{
+          const snap = await getSnapshot(s);
+          const last  = snap?.latestTrade?.p ?? snap?.minuteBar?.c ?? null;
+          const prevc = snap?.prevDailyBar?.c ?? snap?.dailyBar?.o ?? null;
+          const delta = (last!=null && prevc!=null) ? (last-prevc) : null;
+          const pc    = (last!=null && prevc!=null) ? ((delta/prevc)*100) : null;
+          out.push({s,last,delta,pc});
+        }catch(e){}
+      }));
+      return out.filter(r=>r.last!=null && r.pc!=null);
+    }
+
+    /* ===== Holdings cache (for Buy/Sell CTA) ===== */
+    let HELD = new Set(); // upper-case symbols with qty > 0
+    async function refreshHeld(){
+      try{
+        const list = await getPositions();
+        HELD = new Set(
+          (Array.isArray(list)?list:[])
+            .filter(p=> Number(p.qty) > 0 )
+            .map(p=> String(p.symbol||"").toUpperCase())
+        );
+      }catch(e){
+        // keep previous HELD on error
+      }
+    }
+
+    /* ===== Ticker ===== */
+    function renderTicks(rows){
+      return rows.map(r=>{
+        const cls = (r.delta||0)>=0 ? "up":"down";
+        return `<span class="tick"><span class="tick-symbol">${r.s}</span><span class="tick-price ${cls}">${fmt(r.last)}</span><span class="${cls}">${(r.delta>=0?"+":"")+fmt(r.delta)}</span><span class="${cls}">${(r.pc>=0?"+":"")+fmt(r.pc)}%</span></span>`;
+      }).join("");
+    }
+    function ensureFill(lane, shell){
+      const base = lane.innerHTML;
+      if(!base) return;
+      let times = Math.ceil(shell.clientWidth / lane.scrollWidth);
+      if(times > 1) lane.innerHTML = Array(times).fill(base).join("");
+    }
+    function restartAnimation(el){
+      if(!el) return;
+      el.style.animation = "none";
+      /* Force reflow so Safari restarts the ticker animation after async content fills in */
+      void el.offsetWidth;
+      el.style.animation = "";
+    }
+    async function loadTicker(symbols){
+      try{
+        const rows=await fetchSnapshots(symbols);
+        const mid = Math.ceil(rows.length/2);
+        const aRows = rows.slice(0, mid);
+        const bRows = rows.slice(mid);
+
+        const shell = document.querySelector(".ticker-shell");
+        const laneA = $("laneA"), laneB = $("laneB");
+
+        laneA.innerHTML = renderTicks(aRows.length ? aRows : rows);
+        laneB.innerHTML = renderTicks(bRows.length ? bRows : rows);
+
+        requestAnimationFrame(()=>{
+          ensureFill(laneA, shell);
+          ensureFill(laneB, shell);
+          restartAnimation(laneA);
+          restartAnimation(laneB);
+        });
+
+        $("tickStatus").textContent="ok"; $("tickStatus").className="ok";
+      }catch(e){
+        $("tickStatus").textContent="error"; $("tickStatus").className="err";
+      }
+    }
+
+    /* ===== Sparkline helper ===== */
+    function drawSparkline(el, values, colors){
+      const w = el.clientWidth || 120, h = el.clientHeight || 30;
+      if(!values || values.length<2){ el.innerHTML=""; return; }
+      const min = Math.min(...values), max = Math.max(...values);
+      const norm = v => (max===min) ? h/2 : (h - ((v-min)/(max-min))*h);
+      const step = w / (values.length-1);
+      let d=""; values.forEach((v,i)=>{ const x=i*step, y=norm(v); d += (i?" L":"M")+x+" "+y; });
+      const uptrend = values.at(-1) >= values[0];
+      const stroke = uptrend ? (colors?.up || "#16a34a") : (colors?.down || "#ef4444");
+      const fill   = uptrend ? (colors?.upFill || "rgba(22,163,74,.12)") : (colors?.downFill || "rgba(239,68,68,.12)");
+      const area = d + ` L ${w} ${h} L 0 ${h} Z`;
+      el.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+        <path d="${area}" fill="${fill}"></path>
+        <path d="${d}" fill="none" stroke="${stroke}" stroke-width="2"></path>
+      </svg>`;
+    }
+
+    /* ===== Heatmap ===== */
+    function hueForPct(pc){
+      const clamp = Math.max(-5, Math.min(5, pc||0));
+      return clamp>0
+        ? `rgba(22,163,74,${Math.min(0.18, Math.abs(clamp)/12)})`
+        : `rgba(239,68,68,${Math.min(0.18, Math.abs(clamp)/12)})`;
+    }
+    async function renderHeatmap(){
+      const grid = $("heatGrid"); grid.innerHTML="";
+      const rows = (await fetchSnapshots(DEFAULT_WATCH)).sort((a,b)=>Math.abs(b.pc)-Math.abs(a.pc));
+      const take = rows.slice(0, 6);
+      for(const r of take){
+        const tile = document.createElement("div"); tile.className="heat-tile";
+        const dir = r.pc>=0 ? "chg-pos":"chg-neg";
+        const pct = (r.pc>=0?"+":"")+fmt(r.pc)+"%";
+        tile.innerHTML = `
+          <div class="heat-head">
+            <div class="heat-sym">${r.s}</div>
+            <div class="heat-delta ${dir}">${pct}</div>
+          </div>
+          <div class="heat-spark"></div>
+          <div class="glow"></div>
+        `;
+        grid.appendChild(tile);
+
+        tile.style.background = `linear-gradient(180deg, ${hueForPct(r.pc)}, rgba(0,0,0,0))`;
+        tile.querySelector(".glow").style.boxShadow =
+          r.pc>=0 ? `0 0 0 3px rgba(22,163,74,.14)` : `0 0 0 3px rgba(239,68,68,.14)`;
+
+        try{
+          const bars = await getBars(r.s, "15Min");
+          const closes = (bars?.bars||[]).map(b=>+b.c).filter(n=>!isNaN(n)).slice(-60);
+          drawSparkline(tile.querySelector(".heat-spark"), closes, {up:"#16a34a",down:"#ef4444",upFill:"rgba(22,163,74,.14)",downFill:"rgba(239,68,68,.14)"});
+        }catch(e){}
+      }
+    }
+
+    /* ===== Trade CTA bridge (mobile-safe scroll to Place Order) ===== */
+    function updateUrlParams(params, withHash){
+      const url = new URL(window.location.href);
+      Object.entries(params).forEach(([k,v])=> url.searchParams.set(k, v));
+      if (withHash) url.hash = withHash;
+      history.replaceState(null, "", url.toString());
+    }
+
+    function scrollPlaceOrderCardTop(){
+      const el = document.getElementById("placeCard");
+      if(!el) return false;
+      const y = el.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+      return true;
+    }
+
+    function ensurePlaceOrderVisibleWithRetries(max=12, delay=120){
+      let tries = 0;
+      const tick = ()=>{
+        if (scrollPlaceOrderCardTop() || ++tries>=max) return;
+        setTimeout(tick, delay);
+      };
+      tick();
+    }
+
+    function emitTrade(symbol, side="buy"){
+      const evt = new CustomEvent("tamror:trade", { detail: { symbol, side } });
+      window.dispatchEvent(evt);
+
+      /* Try to fill same-page form if present */
+      try{
+        const symEl = document.getElementById("symbol");
+        const sideEl = document.getElementById("side");
+        if(symEl) symEl.value = symbol.toUpperCase();
+        if(sideEl && sideEl.tagName === "SELECT") sideEl.value = side;
+      }catch(e){}
+
+      /* Update URL so Trade module on another section/page can pick it up; carry a hash for auto-scroll */
+      updateUrlParams({ trade: symbol.toUpperCase(), side: side.toLowerCase() }, "placeCard");
+
+      /* On mobile, make sure Place Order card is at the top, not half hidden */
+      ensurePlaceOrderVisibleWithRetries();
+    }
+    window.tamrorEmitTrade = emitTrade;
+
+    /* ===== Hero (ALWAYS Buy, conditionally Sell but no judder) ===== */
+    let heroIndex = 0, heroTimer = null;
+    function heroSlideHTML(r){
+      const pct = (r.pc>=0?"+":"")+fmt(r.pc)+"%";
+      const delta = (r.delta>=0?"+":"")+fmt(r.delta);
+      const have = HELD.has(String(r.s).toUpperCase());
+
+      /* Always render two buttons; when not held, Sell is a hidden "ghost" to reserve space */
+      const buyBtn  = `<button class="btn" type="button" onclick="tamrorEmitTrade('${r.s}','buy')">Buy ${r.s}</button>`;
+      const sellBtn = have
+        ? `<button class="btn btn-secondary" type="button" onclick="tamrorEmitTrade('${r.s}','sell')">Sell ${r.s}</button>`
+        : `<button class="btn btn-secondary ghost" type="button" aria-hidden="true" tabindex="-1">Sell ${r.s}</button>`;
+
+      return `<div class="hero-slide">
+        <div class="hero-left">
+          <div style="font-weight:800;color:#333;font-size:18px;letter-spacing:.2px">${r.s}</div>
+          <div class="hero-price">${fmt(r.last)} <span class="hero-delta ${r.pc>=0?'chg-pos':'chg-neg'}">${delta} · ${pct}</span></div>
+          <div class="hero-cta">${buyBtn}${sellBtn}</div>
+        </div>
+        <div class="hero-right"><div class="hero-chart"></div></div>
+      </div>`;
+    }
+
+    async function renderHero(){
+      const host = $("heroSlides"), nav = $("heroNav");
+      host.innerHTML = nav.innerHTML = "";
+      const rows = (await fetchSnapshots(DEFAULT_WATCH)).sort((a,b)=>Math.abs(b.pc)-Math.abs(a.pc)).slice(0,5);
+      for(const r of rows){
+        host.insertAdjacentHTML("beforeend", heroSlideHTML(r));
+        nav.insertAdjacentHTML("beforeend", `<span class="dot"></span>`);
+      }
+      const slides = Array.from(host.children);
+      const dots = Array.from(nav.children);
+      async function paintChart(idx){
+        const slide = slides[idx];
+        const sym = rows[idx].s;
+        try{
+          const bars = await getBars(sym, "5Min");
+          const closes = (bars?.bars||[]).map(b=>+b.c).filter(n=>!isNaN(n)).slice(-90);
+          drawSparkline(slide.querySelector(".hero-chart"), closes, {up: "#16a34a", down:"#ef4444"});
+        }catch(e){}
+      }
+      function go(i){
+        slides.forEach(s=>s.classList.remove("active"));
+        dots.forEach(d=>d.classList.remove("active"));
+        heroIndex = (i+slides.length)%slides.length;
+        slides[heroIndex].classList.add("active");
+        dots[heroIndex].classList.add("active");
+        $("heroProgress").style.width = "0%";
+        setTimeout(()=>{$("heroProgress").style.transition="none"; $("heroProgress").style.width="0%";},10);
+        setTimeout(()=>{$("heroProgress").style.transition=`width ${HERO_ROTATE_MS}ms linear`; $("heroProgress").style.width="100%";},30);
+        paintChart(heroIndex);
+      }
+      dots.forEach((d,i)=> d.onclick=()=>{ clearInterval(heroTimer); go(i); heroTimer=setInterval(()=>go(heroIndex+1), HERO_ROTATE_MS); });
+      go(0);
+      clearInterval(heroTimer);
+      heroTimer = setInterval(()=>go(heroIndex+1), HERO_ROTATE_MS);
+    }
+
+    /* ===== Init & refresh ===== */
+    async function refreshAll(){
+      await Promise.all([refreshHeld(), loadTicker(DEFAULT_WATCH), renderHeatmap()]);
+      await renderHero(); // hero after holdings fetched so Sell button state is correct
+    }
+
+    setInterval(()=> loadTicker(DEFAULT_WATCH), TICKER_REFRESH_MS);
+    setInterval(refreshHeld, POSITIONS_REFRESH_MS);
+
+    document.addEventListener("DOMContentLoaded", async ()=>{
+      await refreshAll();
+
+      /* If we landed here with ?trade= in the URL, ensure the Place Order card is scrolled to the top */
+      try{
+        const url = new URL(window.location.href);
+        const sym = url.searchParams.get("trade");
+        const sd  = (url.searchParams.get("side") || "buy");
+        if(sym){
+          /* Emit to same-page Trade module if present and scroll to the card top on mobile */
+          emitTrade(sym.toUpperCase(), sd.toLowerCase());
+        }
+      }catch(e){}
+    });
+
+    /* Optional: same-page order form helper (kept for compatibility) */
+    window.addEventListener("tamror:trade", (e)=>{
+      try{
+        const { symbol, side } = e.detail || {};
+        const symEl = document.getElementById("symbol");
+        const sideEl = document.getElementById("side");
+        if(symEl) symEl.value = (symbol||"").toUpperCase();
+        if(sideEl && sideEl.tagName === "SELECT") sideEl.value = (side||"buy");
+      }catch(_){}
+    });
+  </script>
+</div>
