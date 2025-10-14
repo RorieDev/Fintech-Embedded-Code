@@ -253,6 +253,7 @@
         specs:(q('text4').value||'').trim(),
         valuation_gbp:(q('text5').value||'').trim()
       };
+      payload.custom_fields={ ...(payload.custom_fields||{}), Language:'Arabic' };
       if(lastLowGBP!=null) payload.price_low_gbp=lastLowGBP;
       if(lastHighGBP!=null) payload.price_high_gbp=lastHighGBP;
       if(lastConfidence!=null) payload.confidence=lastConfidence;
