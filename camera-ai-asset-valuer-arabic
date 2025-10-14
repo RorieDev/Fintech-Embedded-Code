@@ -39,7 +39,7 @@
       <p><input type="text" id="text2" placeholder="العلامة التجارية" name="brand" class="input"></p>
       <p><input type="text" id="text3" placeholder="الطراز" name="model" class="input"></p>
       <p><textarea id="text4" placeholder="المواصفات" name="specs" rows="3" class="input textarea"></textarea></p>
-      <p><input type="text" id="text5" placeholder="£٤٥٠–£٥٥٠" name="valuation_gbp" class="input"></p>
+      <p><input type="text" id="text5" placeholder="$٥٨٠–$٧١٠" name="valuation_usd" class="input"></p>
 
       <p id="actionsRow" style="display:flex; gap:8px; flex-wrap:nowrap; margin-top:10px;">
         <button type="button" onclick="cancelForm()" class="btnGhost flexThird">إلغاء</button>
@@ -133,7 +133,10 @@
 (function(){
   // Refs/state
   let video, photo, dock, openBtn, cancelBtn, actionBtn, valuationForm, valuationMeta, errorBox, addBtn, formErrorBox, formSuccessBox;
-  let mode='take', hasCapture=false, lastCapture='', lastLowGBP=null, lastHighGBP=null, lastConfidence=null, lastNotes='';
+  let mode='take', hasCapture=false, lastCapture='', lastLowGBP=null, lastHighGBP=null, lastValuationGBP=null,
+      lastLowUSD=null, lastHighUSD=null, lastValuationUSD=null, lastUSDDisplay='', lastConfidence=null, lastNotes='';
+  let cachedFxGBPUSD=null, lastFxGBPUSD=null;
+  const translationCache=new Map();
   const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const q=id=>document.getElementById(id);
 
@@ -155,6 +158,127 @@
       }catch(e){ lastErr=e; }
     }
     throw lastErr || new Error('All REST bases failed');
+  }
+
+  function isArabicText(str){ return /[\u0600-\u06FF]/.test(str||''); }
+  function toDisplayString(value){
+    if(value==null) return '';
+    if(typeof value==='string') return value.trim();
+    if(Array.isArray(value)) return value.map(v=>toDisplayString(v)).filter(Boolean).join(', ');
+    if(typeof value==='object') return toSpecsString(value);
+    return String(value);
+  }
+
+  async function translateToArabic(text){
+    const original=toDisplayString(text);
+    if(!original) return '';
+    if(isArabicText(original)) return original;
+    if(translationCache.has(original)) return translationCache.get(original);
+    const headers={'Content-Type':'application/json'};
+    const nonce=window?.wpApiSettings?.nonce;
+    if(nonce) headers['X-WP-Nonce']=nonce;
+    try{
+      const payload={ text:original, target:'ar' };
+      const data=await tryFetchJSON(apiURL('translate'), { method:'POST', headers, body:JSON.stringify(payload) });
+      let translated='';
+      if(typeof data==='string') translated=data;
+      else if(data && typeof data==='object'){
+        translated=data.translated_text || data.translation || data.result || data.output || '';
+      }
+      translated=toDisplayString(translated)||original;
+      translationCache.set(original, translated);
+      return translated;
+    }catch(err){
+      console.warn('Translation failed, using original text.', err);
+      translationCache.set(original, original);
+      return original;
+    }
+  }
+
+  async function ensureArabic(value, fallback){
+    const primary=toDisplayString(value);
+    if(primary){
+      if(isArabicText(primary)) return primary;
+      const base=toDisplayString(fallback);
+      if(base && base!==primary){
+        const translated=await translateToArabic(base);
+        if(translated) return translated;
+      }
+      return translateToArabic(primary);
+    }
+    const base=toDisplayString(fallback);
+    if(!base) return '';
+    return translateToArabic(base);
+  }
+
+  function extractFxRate(result){
+    const candidates=[
+      result?.fx_rate_gbp_usd,
+      result?.fx_rate_usd,
+      result?.fx_rate,
+      result?.fx?.gbp_usd,
+      result?.fx?.GBP_USD,
+      result?.fx?.GBPUSD,
+      result?.fx?.GBP?.USD,
+      result?.fx?.rates?.GBP_USD,
+      result?.fx?.rates?.GBP?.USD
+    ];
+    for(const cand of candidates){
+      const rate=extractNumber(cand);
+      if(!isNaN(rate) && rate>0) return rate;
+    }
+    return NaN;
+  }
+
+  async function fetchFxRate(){
+    if(cachedFxGBPUSD && cachedFxGBPUSD>0) return cachedFxGBPUSD;
+    const headers={'Content-Type':'application/json'};
+    const nonce=window?.wpApiSettings?.nonce;
+    if(nonce) headers['X-WP-Nonce']=nonce;
+    try{
+      const data=await tryFetchJSON(apiURL('convert-currency'), {
+        method:'POST',
+        headers,
+        body:JSON.stringify({ amount:1, from:'GBP', to:'USD' })
+      });
+      const rate=extractNumber(data?.amount ?? data?.value ?? data?.result ?? data?.usd ?? data);
+      if(!isNaN(rate) && rate>0){ cachedFxGBPUSD=rate; return rate; }
+    }catch(err){ console.warn('Unable to fetch FX rate GBP→USD.', err); }
+    return NaN;
+  }
+
+  function safeNumber(n){ return (typeof n==='number' && isFinite(n)) ? n : (!isNaN(n)? Number(n) : null); }
+
+  function deriveGBPInfo(result){
+    const low=safeNumber(extractNumber(result?.price_low_gbp ?? result?.low_gbp ?? result?.valuation_low_gbp ?? result?.gbp_low ?? result?.price_low));
+    const high=safeNumber(extractNumber(result?.price_high_gbp ?? result?.high_gbp ?? result?.valuation_high_gbp ?? result?.gbp_high ?? result?.price_high));
+    const single=safeNumber(extractNumber(result?.valuation_gbp ?? result?.gbp ?? result?.price_gbp ?? result?.price));
+    return {
+      low: low!=null ? low : null,
+      high: high!=null ? high : null,
+      single: single!=null ? single : null
+    };
+  }
+
+  async function deriveUSDInfo(result, gbpInfo){
+    let low=safeNumber(extractNumber(result?.price_low_usd ?? result?.low_usd ?? result?.valuation_low_usd ?? result?.usd_low));
+    let high=safeNumber(extractNumber(result?.price_high_usd ?? result?.high_usd ?? result?.valuation_high_usd ?? result?.usd_high));
+    let single=safeNumber(extractNumber(result?.valuation_usd ?? result?.usd ?? result?.price_usd));
+    let rate=extractFxRate(result);
+    if((low==null || high==null || single==null) && (rate==null || isNaN(rate) || rate<=0)){
+      rate=await fetchFxRate();
+    }
+    if(rate && rate>0){
+      if(low==null && gbpInfo.low!=null) low=gbpInfo.low*rate;
+      if(high==null && gbpInfo.high!=null) high=gbpInfo.high*rate;
+      if(single==null && gbpInfo.single!=null) single=gbpInfo.single*rate;
+    }
+    return {
+      low: low!=null ? low : null,
+      high: high!=null ? high : null,
+      single: single!=null ? single : null,
+      rate: rate && rate>0 ? rate : null
+    };
   }
 
   function cache(){
@@ -201,7 +325,15 @@
   function toSpecsString(s){ if(!s) return ''; if(typeof s==='string') return s; if(Array.isArray(s)) return s.filter(Boolean).join(', '); if(typeof s==='object'){ return Object.entries(s).filter(([,v])=>v!=null&&v!=='').map(([k,v])=>typeof v==='object'?`${k}: ${toSpecsString(v)}`:`${k}: ${v}`).join(', ');} return String(s); }
   function extractNumber(x){ if(typeof x==='number'&&isFinite(x)) return x; if(typeof x==='string'){const s=x.replace(/,/g,''); const m=s.match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN;} if(Array.isArray(x)){for(const it of x){const n=extractNumber(it); if(!isNaN(n)) return n;} return NaN;} if(x&&typeof x==='object'){const pref=['amount','value','price','avg','average','median']; for(const k of pref){ if(k in x){ const n=extractNumber(x[k]); if(!isNaN(n)) return n; } } for(const v of Object.values(x)){ const n=extractNumber(v); if(!isNaN(n)) return n; }} return NaN; }
   function extractRange(v){ if(v&&typeof v==='object'){ for(const [a,b] of [['low','high'],['min','max'],['from','to']]){ if(a in v||b in v){ return {lo:extractNumber(v[a]), hi:extractNumber(v[b])}; } } } if(Array.isArray(v)&&v.length>=2){ return {lo:extractNumber(v[0]), hi:extractNumber(v[1])}; } if(typeof v==='string'){ const s=v.replace(/,/g,'').trim(); const m=s.match(/(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)/i); if(m){ return {lo:parseFloat(m[1]), hi:parseFloat(m[2])}; } const n=extractNumber(v); return {lo:n, hi:NaN}; } const n=extractNumber(v); return {lo:n, hi:NaN}; }
-  function formatGBP(v){ const nf=new Intl.NumberFormat('ar-EG',{style:'currency',currency:'GBP'}); const {lo,hi}=extractRange(v); const okLo=!isNaN(lo), okHi=!isNaN(hi); if(okLo&&okHi) return nf.format(lo)+' – '+nf.format(hi); if(okLo) return nf.format(lo); if(v&&typeof v==='object') return JSON.stringify(v); return typeof v==='string'?v:''; }
+  function formatCurrency(v, currency, locale){
+    const nf=new Intl.NumberFormat(locale,{style:'currency',currency});
+    const {lo,hi}=extractRange(v);
+    const okLo=!isNaN(lo), okHi=!isNaN(hi);
+    if(okLo&&okHi) return nf.format(lo)+' – '+nf.format(hi);
+    if(okLo) return nf.format(lo);
+    if(v&&typeof v==='object') return JSON.stringify(v);
+    return typeof v==='string'?v:'';
+  }
 
   async function requestValuation(dataUrl){
     const headers={'Content-Type':'application/json'}; const nonce=window?.wpApiSettings?.nonce; if(nonce) headers['X-WP-Nonce']=nonce;
@@ -212,26 +344,51 @@
     if(!hasCapture) doCapture();
     const result = await requestValuation(lastCapture);
 
-    const category = result.category_ar || result.category || '';
-    const brand = result.brand_ar || result.brand || '';
-    const model = result.model_ar || result.model || '';
-    const specs = result.specs_ar || result.specs;
+    const [category, brand, model, specs, translatedNotes] = await Promise.all([
+      ensureArabic(result.category_ar, result.category),
+      ensureArabic(result.brand_ar, result.brand),
+      ensureArabic(result.model_ar, result.model),
+      ensureArabic(result.specs_ar, result.specs),
+      ensureArabic(result.notes_ar, result.notes)
+    ]);
 
     q('text1').value = category;
     q('text2').value = brand;
     q('text3').value = model;
-    q('text4').value = toSpecsString(specs);
-    q('text5').value = formatGBP((result.price_low_gbp!=null && result.price_high_gbp!=null)? {low:result.price_low_gbp, high:result.price_high_gbp} : (result.valuation_gbp ?? result.gbp ?? result.price_gbp));
+    q('text4').value = toDisplayString(specs);
 
-    lastLowGBP  = (result.price_low_gbp  != null) ? Number(result.price_low_gbp)  : null;
-    lastHighGBP = (result.price_high_gbp != null) ? Number(result.price_high_gbp) : null;
+    const gbpInfo = deriveGBPInfo(result);
+    lastLowGBP = gbpInfo.low;
+    lastHighGBP = gbpInfo.high;
+    lastValuationGBP = gbpInfo.single;
+
+    const usdInfo = await deriveUSDInfo(result, gbpInfo);
+    lastLowUSD = usdInfo.low;
+    lastHighUSD = usdInfo.high;
+    lastValuationUSD = usdInfo.single;
+    lastFxGBPUSD = usdInfo.rate || (cachedFxGBPUSD && cachedFxGBPUSD>0 ? cachedFxGBPUSD : null);
+
+    let usdDisplaySource=null;
+    if(lastLowUSD!=null && lastHighUSD!=null){ usdDisplaySource={low:lastLowUSD, high:lastHighUSD}; }
+    else if(lastLowUSD!=null){ usdDisplaySource=lastLowUSD; }
+    else if(lastHighUSD!=null){ usdDisplaySource=lastHighUSD; }
+    else if(lastValuationUSD!=null){ usdDisplaySource=lastValuationUSD; }
+    else {
+      const rawDisplay = toDisplayString(result.valuation_usd_display ?? result.valuation_usd ?? result.valuation ?? result.price_usd);
+      usdDisplaySource = rawDisplay || '';
+    }
+    const usdDisplay = typeof usdDisplaySource==='string' ? usdDisplaySource : formatCurrency(usdDisplaySource, 'USD', 'ar-EG');
+    lastUSDDisplay = usdDisplay || '';
+    q('text5').value = lastUSDDisplay;
+
     lastConfidence = (typeof result.confidence==='number' && isFinite(result.confidence)) ? result.confidence : null;
-    const notesRaw = (result.notes_ar!=null && result.notes_ar!=='') ? result.notes_ar : result.notes;
-    lastNotes = (notesRaw && typeof notesRaw==='object') ? JSON.stringify(notesRaw) : (notesRaw || '');
+    lastNotes = translatedNotes || '';
 
     valuationMeta.style.display='block';
     const confidenceDisplay = lastConfidence!=null ? Number(lastConfidence).toLocaleString('ar-EG',{minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
-    valuationMeta.innerHTML=`<div><strong style="color:var(--text)">مستوى الثقة:</strong> ${confidenceDisplay}</div><div><strong style="color:var(--text)">ملاحظات:</strong> ${lastNotes || '—'}</div>`;
+    const notesDisplay = lastNotes || '—';
+    const usdMetaDisplay = lastUSDDisplay || '—';
+    valuationMeta.innerHTML=`<div><strong style="color:var(--text)">مستوى الثقة:</strong> ${confidenceDisplay}</div><div><strong style="color:var(--text)">القيمة بالدولار الأمريكي:</strong> ${escapeHtml(usdMetaDisplay)}</div><div><strong style="color:var(--text)">ملاحظات:</strong> ${escapeHtml(notesDisplay)}</div>`;
 
     ['text1','text2','text3','text4','text5'].forEach(id=>q(id).readOnly=true);
 
@@ -251,13 +408,19 @@
         brand:(q('text2').value||'').trim(),
         model:(q('text3').value||'').trim(),
         specs:(q('text4').value||'').trim(),
-        valuation_gbp:(q('text5').value||'').trim()
+        valuation_usd:(q('text5').value||'').trim()
       };
-      payload.custom_fields={ ...(payload.custom_fields||{}), Language:'Arabic' };
+      payload.custom_fields={ ...(payload.custom_fields||{}), Language:'Arabic', Currency:'USD' };
+      if(lastValuationUSD!=null) payload.valuation_usd_numeric=lastValuationUSD;
       if(lastLowGBP!=null) payload.price_low_gbp=lastLowGBP;
       if(lastHighGBP!=null) payload.price_high_gbp=lastHighGBP;
+      if(lastLowUSD!=null) payload.price_low_usd=lastLowUSD;
+      if(lastHighUSD!=null) payload.price_high_usd=lastHighUSD;
+      if(lastValuationGBP!=null) payload.valuation_gbp=lastValuationGBP;
+      if(lastFxGBPUSD!=null) payload.fx_rate_gbp_usd=lastFxGBPUSD;
       if(lastConfidence!=null) payload.confidence=lastConfidence;
       if(lastNotes) payload.notes=lastNotes;
+      if(lastUSDDisplay) payload.valuation_usd_display=lastUSDDisplay;
 
       const headers={'Content-Type':'application/json'}; const nonce=window?.wpApiSettings?.nonce; if(nonce) headers['X-WP-Nonce']=nonce;
       const data = await tryFetchJSON(apiURL('save-asset'), { method:'POST', headers, body:JSON.stringify(payload) });
@@ -277,7 +440,7 @@
           <td>${escapeHtml(payload.brand||'')}</td>
           <td>${escapeHtml(payload.model||'')}</td>
           <td class="aiaas-hide-sm">${escapeHtml(payload.specs||'')}</td>
-          <td>${escapeHtml(payload.valuation_gbp||'')}</td>
+          <td>${escapeHtml(payload.valuation_usd || payload.valuation_usd_display || lastUSDDisplay || '')}</td>
           <td class="aiaas-hide-sm">${lastConfidence!=null? Number(lastConfidence).toLocaleString('ar-EG') : '—'}</td>
           <td class="aiaas-hide-sm">${new Date().toLocaleDateString('ar-EG')}</td>`;
         tbody.insertBefore(tr, tbody.firstChild);
