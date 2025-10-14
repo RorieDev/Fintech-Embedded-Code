@@ -1,0 +1,295 @@
+<!-- Camera → valuation → persistent save ENGLISH
+     Colors: bg #ffffff, text #7A7A7A, accent #FC6481
+     Mobile table: show only Image | Title | Valuation (equal widths)
+     Table text & image centered (H & V), font: Work Sans (normal) -->
+
+<div id="valuationWidget" style="--bg:#ffffff; --text:#7A7A7A; --accent:#FC6481; --accentHover:#e65376; --border:#e5e5e5; --maxw:640px; width:100%;">
+
+  <!-- OPEN CAMERA (aligned with other buttons) -->
+  <button id="cameraOpenBtn" type="button" class="aligned-btn"
+          style="cursor:pointer; display:flex; justify-content:center; align-items:center; gap:10px;
+                 background:var(--accent); color:#fff; border:1px solid var(--accent);
+                 padding:14px 16px; border-radius:10px; font-weight:600;">
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4.5 8 6H5a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3h-3l-1.5-1.5h-5Zm2.5 13.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" fill="currentColor"/></svg>
+    <span>OPEN CAMERA</span>
+  </button>
+
+  <!-- Fixed camera dock -->
+  <div id="cameraDock" class="hidden"
+       style="position:fixed; z-index:9999; top:0; left:50%; transform:translateX(-50%);
+              width:100vw; padding:env(safe-area-inset-top) 12px 12px; box-sizing:border-box; background:var(--bg);">
+    <div style="max-width:var(--maxw); margin:0 auto;">
+      <div id="cameraStage" style="position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000;">
+        <video id="video" playsinline muted autoplay style="width:100%; height:auto; display:block;"></video>
+        <img id="photo" alt="Captured" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; z-index:2; pointer-events:none;">
+      </div>
+      <div style="display:flex; gap:12px; margin-top:10px;">
+        <button id="cancelBtn" class="btnGhost" style="flex:1 1 50%; background:#fff; color:var(--text); border:1px solid var(--border); padding:12px 14px; border-radius:10px; font-weight:600;">Cancel</button>
+        <button id="actionBtn" class="btnPrimary" style="flex:1 1 50%; background:var(--accent); color:#fff; border:1px solid var(--accent); padding:12px 14px; border-radius:10px; font-weight:600;">Take</button>
+      </div>
+      <div id="errorBox" style="display:none; margin-top:10px; color:#7A7A7A; background:#ffe8ee; border:1px solid var(--accent); border-radius:8px; padding:10px 12px;"></div>
+    </div>
+  </div>
+
+  <!-- Valuation form -->
+  <div id="valuationForm" class="hidden"
+       style="background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:16px; max-width:var(--maxw); margin:12px auto 0;">
+    <form id="valuationFormEl" action="#" method="post" onsubmit="validateForm(event)" style="margin:0;">
+      <p><input type="text" id="text1" placeholder="Category" name="category" class="input"></p>
+      <p><input type="text" id="text2" placeholder="Brand" name="brand" class="input"></p>
+      <p><input type="text" id="text3" placeholder="Model" name="model" class="input"></p>
+      <p><textarea id="text4" placeholder="Specs" name="specs" rows="3" class="input textarea"></textarea></p>
+      <p><input type="text" id="text5" placeholder="£450–£550" name="valuation_gbp" class="input"></p>
+
+      <p id="actionsRow" style="display:flex; gap:8px; flex-wrap:nowrap; margin-top:10px;">
+        <button type="button" onclick="cancelForm()" class="btnGhost flexThird">Cancel</button>
+        <button type="button" id="editVals" class="btnSecondary flexThird">Edit</button>
+        <input id="addBtn" type="submit" value="Add" class="btnPrimary flexThird" style="background:var(--accent); color:#fff; border:1px solid var(--accent);">
+      </p>
+
+      <div id="valuationMeta" style="margin-top:12px; display:none; color:var(--text);"></div>
+      <div id="formErrorBox" style="display:none; margin-top:10px; color:#7A7A7A; background:#fff3cd; border:1px solid #ffe08a; border-radius:8px; padding:10px 12px;"></div>
+      <div id="formSuccessBox" style="display:none; margin-top:10px; color:#155724; background:#d4edda; border:1px solid #c3e6cb; border-radius:8px; padding:10px 12px;"></div>
+    </form>
+  </div>
+</div>
+
+<style>
+  /* Font: Work Sans (normal) */
+  @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600&display=swap');
+  #valuationWidget, #valuationWidget *:not(svg):not(path),
+  #aiaasTable, #aiaasTable *:not(svg):not(path), .aiaas-table, .aiaas-table *:not(svg):not(path){
+    font-family: "Work Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    font-weight: 400;
+  }
+
+  .hidden{ display:none !important; }
+  #valuationWidget .aligned-btn{ width:100%; max-width:var(--maxw); margin:12px auto; box-sizing:border-box; }
+  #valuationWidget .aligned-btn:hover{ background:var(--accentHover); border-color:var(--accentHover); }
+  #valuationWidget .input{ background:#fff; color:var(--text); border:1px solid var(--border); padding:10px 12px; border-radius:8px; width:100%; box-sizing:border-box; outline:0; }
+  #valuationWidget .textarea{ min-height:84px; line-height:1.4; resize:vertical; }
+  #valuationWidget .input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(252,100,129,.15); }
+  .btnPrimary{ background:var(--accent); color:#fff; border:1px solid var(--accent); padding:12px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+  .btnPrimary:hover{ background:var(--accentHover); border-color:var(--accentHover); }
+  .btnSecondary, .btnGhost{ background:#fff; color:#7A7A7A; border:1px solid var(--border); padding:12px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+  .loading{ opacity:.9; pointer-events:none; }
+  .dots{ display:inline-block; width:1.5em; text-align:left; }
+  .dots span{ display:inline-block; width:.33em; animation:blink 1s infinite; }
+  .dots span:nth-child(2){ animation-delay:.2s; } .dots span:nth-child(3){ animation-delay:.4s; }
+  @keyframes blink{ 0%,20%{opacity:0} 50%{opacity:1} 100%{opacity:0} }
+  .flexThird{ flex:1 1 33.333%; }
+  @media (max-width:360px){ #actionsRow{ flex-wrap:wrap; } .flexThird{ flex:1 1 100%; } }
+  body.noscroll{ overflow:hidden; height:100vh; }
+
+  /* ===== TABLE FORMATTING (center everything) ===== */
+  #aiaasTable, .aiaas-table{ width:100%; border-collapse:separate; border-spacing:0; }
+  #aiaasTable th, #aiaasTable td,
+  .aiaas-table th, .aiaas-table td{
+    text-align:center;              /* horizontal center */
+    vertical-align:middle;          /* vertical center */
+    padding:10px;
+    line-height:1.2;
+  }
+  /* Center image nicely */
+  #aiaasTable td:nth-child(1), .aiaas-table td:nth-child(1){ text-align:center; }
+  #aiaasTable .aiaas-thumb, .aiaas-table .aiaas-thumb{
+    display:block; margin:0 auto;
+    width:56px; height:56px; object-fit:cover; border-radius:8px;
+  }
+
+  /* ===== MOBILE TABLE LAYOUT =====
+     On phones, show ONLY columns 1(Image), 2(Title), 7(Valuation), each 33.33% width */
+  @media (max-width: 640px){
+    #aiaasTable, .aiaas-table{ table-layout:fixed; }
+
+    /* Hide Category(3), Brand(4), Model(5), Specs(6), Confidence(8), Date(9) */
+    #aiaasTable th:nth-child(3), #aiaasTable td:nth-child(3),
+    #aiaasTable th:nth-child(4), #aiaasTable td:nth-child(4),
+    #aiaasTable th:nth-child(5), #aiaasTable td:nth-child(5),
+    #aiaasTable th:nth-child(6), #aiaasTable td:nth-child(6),
+    #aiaasTable th:nth-child(8), #aiaasTable td:nth-child(8),
+    #aiaasTable th:nth-child(9), #aiaasTable td:nth-child(9),
+    .aiaas-table th:nth-child(3), .aiaas-table td:nth-child(3),
+    .aiaas-table th:nth-child(4), .aiaas-table td:nth-child(4),
+    .aiaas-table th:nth-child(5), .aiaas-table td:nth-child(5),
+    .aiaas-table th:nth-child(6), .aiaas-table td:nth-child(6),
+    .aiaas-table th:nth-child(8), .aiaas-table td:nth-child(8),
+    .aiaas-table th:nth-child(9), .aiaas-table td:nth-child(9){ display:none; }
+
+    /* Visible columns equal width */
+    #aiaasTable th:nth-child(1), #aiaasTable td:nth-child(1),
+    #aiaasTable th:nth-child(2), #aiaasTable td:nth-child(2),
+    #aiaasTable th:nth-child(7), #aiaasTable td:nth-child(7),
+    .aiaas-table th:nth-child(1), .aiaas-table td:nth-child(1),
+    .aiaas-table th:nth-child(2), .aiaas-table td:nth-child(2),
+    .aiaas-table th:nth-child(7), .aiaas-table td:nth-child(7){ width:33.333%; }
+  }
+</style>
+
+<script>
+(function(){
+  // Refs/state
+  let video, photo, dock, openBtn, cancelBtn, actionBtn, valuationForm, valuationMeta, errorBox, addBtn, formErrorBox, formSuccessBox;
+  let mode='take', hasCapture=false, lastCapture='', lastLowGBP=null, lastHighGBP=null, lastConfidence=null, lastNotes='';
+  const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const q=id=>document.getElementById(id);
+
+  // REST bases (handles /plugins, /mu-plugins, pretty & non-pretty links)
+  const ROOT_A=(window?.wpApiSettings?.root||'/wp-json/').replace(/\/?$/,'/')+'aiaas/v1/';
+  const ROOT_B='/wp-json/aiaas/v1/';
+  const ROOT_C=location.origin+'/index.php?rest_route=/aiaas/v1/';
+  const REST_BASES=[ROOT_A,ROOT_B,ROOT_C].filter((v,i,a)=>a.indexOf(v)===i);
+  const apiURL = ep => REST_BASES.map(b=>b+ep);
+
+  async function tryFetchJSON(urls, opts){
+    let lastErr=null, lastText='';
+    for(const u of urls){
+      try{
+        const r=await fetch(u,opts);
+        lastText=await r.text().catch(()=> '');
+        if(r.ok){ try{ return JSON.parse(lastText||'{}'); }catch(_){ return (lastText||''); } }
+        lastErr=new Error(`${opts?.method||'GET'} ${u} -> ${r.status}: ${lastText}`);
+      }catch(e){ lastErr=e; }
+    }
+    throw lastErr || new Error('All REST bases failed');
+  }
+
+  function cache(){
+    video=q('video'); photo=q('photo'); dock=q('cameraDock');
+    openBtn=q('cameraOpenBtn'); cancelBtn=q('cancelBtn'); actionBtn=q('actionBtn');
+    valuationForm=q('valuationForm'); valuationMeta=q('valuationMeta'); errorBox=q('errorBox');
+    formErrorBox=q('formErrorBox'); formSuccessBox=q('formSuccessBox'); addBtn=q('addBtn');
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    cache();
+    openBtn.addEventListener('click', openCamera);
+    cancelBtn.addEventListener('click', cancelCamera);
+    actionBtn.addEventListener('click', handleAction);
+    const edit=q('editVals'); if(edit){ edit.addEventListener('click', ()=>['text1','text2','text3','text4','text5'].forEach(id=>q(id).readOnly=false)); }
+  });
+
+  async function openCamera(){
+    try{
+      const constraints=isMobile?{ video:{ facingMode:'environment' }}:{ video:true };
+      const stream=await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject=stream;
+      document.body.classList.add('noscroll');
+      dock.classList.remove('hidden');
+      openBtn.classList.add('hidden');
+      window.scrollTo({ top:0, left:0, behavior:'auto' });
+      setMode('take'); hasCapture=false; photo.style.display='none';
+    }catch(e){ showDockError('Camera permission error.'); console.error(e); }
+  }
+  function stopStream(){ const s=video?.srcObject; if(s){ try{s.getTracks().forEach(t=>t.stop());}catch(_){}} if(video){ video.srcObject=null; video.src=''; } }
+  function cancelCamera(){ stopStream(); document.body.classList.remove('noscroll'); dock.classList.add('hidden'); openBtn.classList.remove('hidden'); photo.style.display='none'; hasCapture=false; setMode('take'); }
+  function setMode(m){ mode=m; actionBtn.classList.remove('loading'); actionBtn.disabled=false; actionBtn.innerHTML=(m==='take'?'Take':'Get Valuation'); actionBtn.className='btnPrimary'; }
+  function setLoading(on){ if(on){ actionBtn.disabled=true; actionBtn.classList.add('loading'); actionBtn.innerHTML='Valuing<span class="dots"><span>.</span><span>.</span><span>.</span></span>'; } else { actionBtn.disabled=false; actionBtn.classList.remove('loading'); actionBtn.innerHTML=(mode==='take')?'Take':'Get Valuation'; } }
+  function handleAction(){ if(mode==='take'){ doCapture(); setMode('value'); } else { setLoading(true); getValuation().catch(err=>showDockError(err?.message||String(err))).finally(()=>setLoading(false)); } }
+
+  function doCapture(){
+    clearDockError(); clearFormMessages();
+    const c=document.createElement('canvas'); const vw=video.videoWidth||1280, vh=video.videoHeight||720;
+    const maxW=1280, scale=Math.min(1, maxW/vw); c.width=Math.round(vw*scale); c.height=Math.round(vh*scale);
+    c.getContext('2d').drawImage(video,0,0,c.width,c.height);
+    lastCapture=c.toDataURL('image/jpeg',0.75); photo.src=lastCapture; photo.style.display='block'; hasCapture=true; try{ video.pause(); }catch(_){}
+  }
+
+  function toSpecsString(s){ if(!s) return ''; if(typeof s==='string') return s; if(Array.isArray(s)) return s.filter(Boolean).join(', '); if(typeof s==='object'){ return Object.entries(s).filter(([,v])=>v!=null&&v!=='').map(([k,v])=>typeof v==='object'?`${k}: ${toSpecsString(v)}`:`${k}: ${v}`).join(', ');} return String(s); }
+  function extractNumber(x){ if(typeof x==='number'&&isFinite(x)) return x; if(typeof x==='string'){const s=x.replace(/,/g,''); const m=s.match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN;} if(Array.isArray(x)){for(const it of x){const n=extractNumber(it); if(!isNaN(n)) return n;} return NaN;} if(x&&typeof x==='object'){const pref=['amount','value','price','avg','average','median']; for(const k of pref){ if(k in x){ const n=extractNumber(x[k]); if(!isNaN(n)) return n; } } for(const v of Object.values(x)){ const n=extractNumber(v); if(!isNaN(n)) return n; }} return NaN; }
+  function extractRange(v){ if(v&&typeof v==='object'){ for(const [a,b] of [['low','high'],['min','max'],['from','to']]){ if(a in v||b in v){ return {lo:extractNumber(v[a]), hi:extractNumber(v[b])}; } } } if(Array.isArray(v)&&v.length>=2){ return {lo:extractNumber(v[0]), hi:extractNumber(v[1])}; } if(typeof v==='string'){ const s=v.replace(/,/g,'').trim(); const m=s.match(/(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)/i); if(m){ return {lo:parseFloat(m[1]), hi:parseFloat(m[2])}; } const n=extractNumber(v); return {lo:n, hi:NaN}; } const n=extractNumber(v); return {lo:n, hi:NaN}; }
+  function formatGBP(v){ const nf=new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}); const {lo,hi}=extractRange(v); const okLo=!isNaN(lo), okHi=!isNaN(hi); if(okLo&&okHi) return nf.format(lo)+' – '+nf.format(hi); if(okLo) return nf.format(lo); if(v&&typeof v==='object') return JSON.stringify(v); return typeof v==='string'?v:''; }
+
+  async function requestValuation(dataUrl){
+    const headers={'Content-Type':'application/json'}; const nonce=window?.wpApiSettings?.nonce; if(nonce) headers['X-WP-Nonce']=nonce;
+    return tryFetchJSON(apiURL('value-image'), { method:'POST', headers, body:JSON.stringify({ image:dataUrl }) });
+  }
+
+  async function getValuation(){
+    if(!hasCapture) doCapture();
+    const result = await requestValuation(lastCapture);
+
+    q('text1').value = result.category || '';
+    q('text2').value = result.brand || '';
+    q('text3').value = result.model || '';
+    q('text4').value = toSpecsString(result.specs);
+    q('text5').value = formatGBP((result.price_low_gbp!=null && result.price_high_gbp!=null)? {low:result.price_low_gbp, high:result.price_high_gbp} : (result.valuation_gbp ?? result.gbp ?? result.price_gbp));
+
+    lastLowGBP  = (result.price_low_gbp  != null) ? Number(result.price_low_gbp)  : null;
+    lastHighGBP = (result.price_high_gbp != null) ? Number(result.price_high_gbp) : null;
+    lastConfidence = (typeof result.confidence==='number' && isFinite(result.confidence)) ? result.confidence : null;
+    lastNotes = (result.notes && typeof result.notes==='object') ? JSON.stringify(result.notes) : (result.notes || '');
+
+    valuationMeta.style.display='block';
+    valuationMeta.innerHTML=`<div><strong style="color:var(--text)">Confidence:</strong> ${lastConfidence!=null? lastConfidence.toFixed(2) : '—'}</div><div><strong style="color:var(--text)">Notes:</strong> ${lastNotes || '—'}</div>`;
+
+    ['text1','text2','text3','text4','text5'].forEach(id=>q(id).readOnly=true);
+
+    stopStream(); document.body.classList.remove('noscroll'); dock.classList.add('hidden');
+    valuationForm.classList.remove('hidden'); valuationForm.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  // Save asset on Add
+  window.validateForm = async function(e){
+    e.preventDefault(); clearFormMessages();
+    if(!lastCapture){ showFormError('No photo to save. Please Take a photo first.'); return; }
+    const button=q('addBtn'); const original=button.value||'Add'; button.disabled=true; button.value='Saving…';
+    try{
+      const payload={
+        image:lastCapture,
+        category:(q('text1').value||'').trim(),
+        brand:(q('text2').value||'').trim(),
+        model:(q('text3').value||'').trim(),
+        specs:(q('text4').value||'').trim(),
+        valuation_gbp:(q('text5').value||'').trim()
+      };
+      if(lastLowGBP!=null) payload.price_low_gbp=lastLowGBP;
+      if(lastHighGBP!=null) payload.price_high_gbp=lastHighGBP;
+      if(lastConfidence!=null) payload.confidence=lastConfidence;
+      if(lastNotes) payload.notes=lastNotes;
+
+      const headers={'Content-Type':'application/json'}; const nonce=window?.wpApiSettings?.nonce; if(nonce) headers['X-WP-Nonce']=nonce;
+      const data = await tryFetchJSON(apiURL('save-asset'), { method:'POST', headers, body:JSON.stringify(payload) });
+
+      showFormSuccess('Asset saved.' + (data?.link? ' <a href="'+data.link+'">View</a>' : ''));
+      button.value='Saved ✓';
+
+      // If a table exists on the page, prepend the row (desktop has 9 cols; mobile CSS hides others)
+      const table=document.getElementById('aiaasTable');
+      if(table){
+        const tbody=table.querySelector('tbody')||table;
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td><img src="${lastCapture}" class="aiaas-thumb"></td>
+          <td>${escapeHtml(((payload.brand+' '+payload.model).trim()) || payload.category || 'Asset')}</td>
+          <td class="aiaas-hide-sm">${escapeHtml(payload.category||'')}</td>
+          <td>${escapeHtml(payload.brand||'')}</td>
+          <td>${escapeHtml(payload.model||'')}</td>
+          <td class="aiaas-hide-sm">${escapeHtml(payload.specs||'')}</td>
+          <td>${escapeHtml(payload.valuation_gbp||'')}</td>
+          <td class="aiaas-hide-sm">${lastConfidence!=null? String(lastConfidence) : '—'}</td>
+          <td class="aiaas-hide-sm">${new Date().toLocaleDateString()}</td>`;
+        tbody.insertBefore(tr, tbody.firstChild);
+      }
+    }catch(err){
+      console.error(err);
+      showFormError(err?.message || String(err));
+      button.value='Retry Add';
+    }finally{
+      setTimeout(()=>{ button.disabled=false; if(button.value!=='Saved ✓') button.value=original; }, 1500);
+    }
+  };
+
+  // UI helpers
+  function showDockError(msg){ errorBox.style.display='block'; errorBox.textContent=msg; }
+  function clearDockError(){ errorBox.style.display='none'; errorBox.textContent=''; }
+  function showFormError(msg){ formErrorBox.style.display='block'; formErrorBox.innerHTML=sanitizeHtml(msg); }
+  function showFormSuccess(msg){ formSuccessBox.style.display='block'; formSuccessBox.innerHTML=sanitizeHtml(msg); }
+  function clearFormMessages(){ formErrorBox.style.display='none'; formErrorBox.textContent=''; formSuccessBox.style.display='none'; formSuccessBox.textContent=''; }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function sanitizeHtml(s){ return String(s).replace(/<(?!\/?a(\s|>))/g,'&lt;').replace(/javascript:/gi,''); }
+
+  // Cancel form
+  window.cancelForm=function(){ location.reload(); };
+})();
+</script>
