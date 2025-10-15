@@ -1,29 +1,25 @@
-<!-- Camera → valuation → persistent save ARABIC
-     Colors: bg #ffffff, text #7A7A7A, accent #FC6481
-     Mobile table: show only Image | Title | Valuation (equal widths)
-     Table text & image centered (H & V), font: Work Sans (normal) -->
+<!-- كاميرا → تقييم → حفظ (واجهة عربية كاملة + ترجمة قبل العرض) -->
+<div id="valuationWidget" dir="rtl" style="--bg:#ffffff; --text:#7A7A7A; --accent:#FC6481; --accentHover:#e65376; --border:#e5e5e5; --maxw:640px; width:100%;">
 
-<div id="valuationWidget" lang="ar" dir="rtl" style="--bg:#ffffff; --text:#7A7A7A; --accent:#FC6481; --accentHover:#e65376; --border:#e5e5e5; --maxw:640px; width:100%;">
-
-  <!-- OPEN CAMERA (aligned with other buttons) -->
+  <!-- فتح الكاميرا -->
   <button id="cameraOpenBtn" type="button" class="aligned-btn"
           style="cursor:pointer; display:flex; justify-content:center; align-items:center; gap:10px;
                  background:var(--accent); color:#fff; border:1px solid var(--accent);
                  padding:14px 16px; border-radius:10px; font-weight:600;">
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 4.5 8 6H5a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3h-3l-1.5-1.5h-5Zm2.5 13.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" fill="currentColor"/></svg>
-    <span>فتح الكاميرا</span>
+    <span id="cameraOpenLbl">فتح الكاميرا</span>
   </button>
 
-  <!-- Fixed camera dock -->
+  <!-- منصة الكاميرا -->
   <div id="cameraDock" class="hidden"
        style="position:fixed; z-index:9999; top:0; left:50%; transform:translateX(-50%);
               width:100vw; padding:env(safe-area-inset-top) 12px 12px; box-sizing:border-box; background:var(--bg);">
     <div style="max-width:var(--maxw); margin:0 auto;">
       <div id="cameraStage" style="position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000;">
         <video id="video" playsinline muted autoplay style="width:100%; height:auto; display:block;"></video>
-        <img id="photo" alt="Captured" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; z-index:2; pointer-events:none;">
+        <img id="photo" alt="لقطة" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; z-index:2; pointer-events:none;">
       </div>
-      <div style="display:flex; gap:12px; margin-top:10px;">
+      <div style="display:flex; gap:12px; margin-top:10px; flex-direction:row-reverse;">
         <button id="cancelBtn" class="btnGhost" style="flex:1 1 50%; background:#fff; color:var(--text); border:1px solid var(--border); padding:12px 14px; border-radius:10px; font-weight:600;">إلغاء</button>
         <button id="actionBtn" class="btnPrimary" style="flex:1 1 50%; background:var(--accent); color:#fff; border:1px solid var(--accent); padding:12px 14px; border-radius:10px; font-weight:600;">التقاط</button>
       </div>
@@ -31,40 +27,35 @@
     </div>
   </div>
 
-  <!-- Valuation form -->
+  <!-- نموذج التقييم (يُملأ بالعربية) -->
   <div id="valuationForm" class="hidden"
        style="background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:10px; padding:16px; max-width:var(--maxw); margin:12px auto 0;">
     <form id="valuationFormEl" action="#" method="post" onsubmit="validateForm(event)" style="margin:0;">
-      <p><input type="text" id="text1" placeholder="الفئة" name="category" class="input"></p>
-      <p><input type="text" id="text2" placeholder="العلامة التجارية" name="brand" class="input"></p>
-      <p><input type="text" id="text3" placeholder="الطراز" name="model" class="input"></p>
-      <p><textarea id="text4" placeholder="المواصفات" name="specs" rows="3" class="input textarea"></textarea></p>
-      <p><input type="text" id="text5" placeholder="$٥٨٠–$٧١٠" name="valuation_usd" class="input"></p>
+      <p><input type="text" id="text1" placeholder="الفئة" name="category" class="input" dir="rtl" style="text-align:right;"></p>
+      <p><input type="text" id="text2" placeholder="العلامة التجارية" name="brand" class="input" dir="rtl" style="text-align:right;"></p>
+      <p><input type="text" id="text3" placeholder="الطراز" name="model" class="input" dir="rtl" style="text-align:right;"></p>
+      <p><textarea id="text4" placeholder="المواصفات" name="specs" rows="3" class="input textarea" dir="rtl" style="text-align:right;"></textarea></p>
+      <p><input type="text" id="text5" placeholder="£450–£550" name="valuation_gbp" class="input" dir="rtl" style="text-align:right;"></p>
 
-      <p id="actionsRow" style="display:flex; gap:8px; flex-wrap:nowrap; margin-top:10px;">
+      <p id="actionsRow" style="display:flex; gap:8px; flex-wrap:nowrap; margin-top:10px; flex-direction:row-reverse;">
         <button type="button" onclick="cancelForm()" class="btnGhost flexThird">إلغاء</button>
-        <button type="button" id="editVals" class="btnSecondary flexThird">تعديل</button>
+        <button type="button" id="editVals" class="btnSecondary flexThird">تحرير</button>
         <input id="addBtn" type="submit" value="إضافة" class="btnPrimary flexThird" style="background:var(--accent); color:#fff; border:1px solid var(--accent);">
       </p>
 
-      <div id="valuationMeta" style="margin-top:12px; display:none; color:var(--text);"></div>
-      <div id="formErrorBox" style="display:none; margin-top:10px; color:#7A7A7A; background:#fff3cd; border:1px solid #ffe08a; border-radius:8px; padding:10px 12px;"></div>
-      <div id="formSuccessBox" style="display:none; margin-top:10px; color:#155724; background:#d4edda; border:1px solid #c3e6cb; border-radius:8px; padding:10px 12px;"></div>
+      <div id="valuationMeta" style="margin-top:12px; display:none; color:var(--text);" dir="rtl"></div>
+      <div id="formErrorBox" style="display:none; margin-top:10px; color:#7A7A7A; background:#fff3cd; border:1px solid #ffe08a; border-radius:8px; padding:10px 12px;" dir="rtl"></div>
+      <div id="formSuccessBox" style="display:none; margin-top:10px; color:#155724; background:#d4edda; border:1px solid #c3e6cb; border-radius:8px; padding:10px 12px;" dir="rtl"></div>
     </form>
   </div>
 </div>
 
 <style>
-  /* Font: Work Sans (normal) */
   @import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600&display=swap');
-  #valuationWidget, #valuationWidget *:not(svg):not(path),
-  #aiaasTable, #aiaasTable *:not(svg):not(path), .aiaas-table, .aiaas-table *:not(svg):not(path){
-    font-family: "Work Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  #valuationWidget, #valuationWidget *:not(svg):not(path){
+    font-family: "Work Sans", system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
     font-weight: 400;
   }
-  #valuationWidget{ direction:rtl; text-align:right; }
-  #valuationWidget .aligned-btn span{ font-weight:600; }
-  #valuationWidget .input, #valuationWidget .textarea{ text-align:right; direction:rtl; }
 
   .hidden{ display:none !important; }
   #valuationWidget .aligned-btn{ width:100%; max-width:var(--maxw); margin:12px auto; box-sizing:border-box; }
@@ -83,69 +74,44 @@
   .flexThird{ flex:1 1 33.333%; }
   @media (max-width:360px){ #actionsRow{ flex-wrap:wrap; } .flexThird{ flex:1 1 100%; } }
   body.noscroll{ overflow:hidden; height:100vh; }
-
-  /* ===== TABLE FORMATTING (center everything) ===== */
-  #aiaasTable, .aiaas-table{ width:100%; border-collapse:separate; border-spacing:0; }
-  #aiaasTable th, #aiaasTable td,
-  .aiaas-table th, .aiaas-table td{
-    text-align:center;              /* horizontal center */
-    vertical-align:middle;          /* vertical center */
-    padding:10px;
-    line-height:1.2;
-  }
-  /* Center image nicely */
-  #aiaasTable td:nth-child(1), .aiaas-table td:nth-child(1){ text-align:center; }
-  #aiaasTable .aiaas-thumb, .aiaas-table .aiaas-thumb{
-    display:block; margin:0 auto;
-    width:56px; height:56px; object-fit:cover; border-radius:8px;
-  }
-
-  /* ===== MOBILE TABLE LAYOUT =====
-     On phones, show ONLY columns 1(Image), 2(Title), 7(Valuation), each 33.33% width */
-  @media (max-width: 640px){
-    #aiaasTable, .aiaas-table{ table-layout:fixed; }
-
-    /* Hide Category(3), Brand(4), Model(5), Specs(6), Confidence(8), Date(9) */
-    #aiaasTable th:nth-child(3), #aiaasTable td:nth-child(3),
-    #aiaasTable th:nth-child(4), #aiaasTable td:nth-child(4),
-    #aiaasTable th:nth-child(5), #aiaasTable td:nth-child(5),
-    #aiaasTable th:nth-child(6), #aiaasTable td:nth-child(6),
-    #aiaasTable th:nth-child(8), #aiaasTable td:nth-child(8),
-    #aiaasTable th:nth-child(9), #aiaasTable td:nth-child(9),
-    .aiaas-table th:nth-child(3), .aiaas-table td:nth-child(3),
-    .aiaas-table th:nth-child(4), .aiaas-table td:nth-child(4),
-    .aiaas-table th:nth-child(5), .aiaas-table td:nth-child(5),
-    .aiaas-table th:nth-child(6), .aiaas-table td:nth-child(6),
-    .aiaas-table th:nth-child(8), .aiaas-table td:nth-child(8),
-    .aiaas-table th:nth-child(9), .aiaas-table td:nth-child(9){ display:none; }
-
-    /* Visible columns equal width */
-    #aiaasTable th:nth-child(1), #aiaasTable td:nth-child(1),
-    #aiaasTable th:nth-child(2), #aiaasTable td:nth-child(2),
-    #aiaasTable th:nth-child(7), #aiaasTable td:nth-child(7),
-    .aiaas-table th:nth-child(1), .aiaas-table td:nth-child(1),
-    .aiaas-table th:nth-child(2), .aiaas-table td:nth-child(2),
-    .aiaas-table th:nth-child(7), .aiaas-table td:nth-child(7){ width:33.333%; }
-  }
 </style>
 
 <script>
 (function(){
-  // Refs/state
+  // Arabic strings
+  const STR = {
+    openCamera: 'فتح الكاميرا',
+    take: 'التقاط',
+    getVal: 'احصل على التقييم',
+    valuing: 'جارٍ التقييم',
+    translating: 'جارٍ الترجمة…',
+    saving: 'جارٍ الحفظ…',
+    saved: 'تم الحفظ ✓',
+    cancel: 'إلغاء',
+    edit: 'تحرير',
+    add: 'إضافة',
+    camError: 'خطأ في أذونات الكاميرا.',
+    noPhoto: 'لا توجد صورة للحفظ. يُرجى الالتقاط أولًا.',
+    savedArabic: 'تم حفظ الأصل باللغة العربية.',
+    confidence: 'مستوى الثقة',
+    notes: 'ملاحظات',
+  };
+
+  // DOM refs/state
   let video, photo, dock, openBtn, cancelBtn, actionBtn, valuationForm, valuationMeta, errorBox, addBtn, formErrorBox, formSuccessBox;
-  let mode='take', hasCapture=false, lastCapture='', lastLowGBP=null, lastHighGBP=null, lastValuationGBP=null,
-      lastLowUSD=null, lastHighUSD=null, lastValuationUSD=null, lastUSDDisplay='', lastConfidence=null, lastNotes='';
-  let cachedFxGBPUSD=null, lastFxGBPUSD=null;
-  const translationCache=new Map();
+  let mode='take', hasCapture=false, lastCapture='', lastLowGBP=null, lastHighGBP=null, lastConfidence=null, lastNotes='';
   const isMobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const q=id=>document.getElementById(id);
 
-  // REST bases (handles /plugins, /mu-plugins, pretty & non-pretty links)
-  const ROOT_A=(window?.wpApiSettings?.root||'/wp-json/').replace(/\/?$/,'/')+'aiaas/v1/';
-  const ROOT_B='/wp-json/aiaas/v1/';
-  const ROOT_C=location.origin+'/index.php?rest_route=/aiaas/v1/';
-  const REST_BASES=[ROOT_A,ROOT_B,ROOT_C].filter((v,i,a)=>a.indexOf(v)===i);
-  const apiURL = ep => REST_BASES.map(b=>b+ep);
+  // Arabic target + source language of model output (usually EN)
+  const AR_CODE = 'ar';
+  const SOURCE_LANG = 'en'; // غيّرها إذا كان الإخراج الأساسي بالعربية بالفعل
+
+  // REST bases
+  const ROOT=(window?.wpApiSettings?.root||'/wp-json/').replace(/\/?$/,'/');
+  const API_BASES=[ROOT+'aiaas/v1/', '/wp-json/aiaas/v1/', location.origin+'/index.php?rest_route=/aiaas/v1/']
+    .filter((v,i,a)=>a.indexOf(v)===i);
+  const apiURL = ep => API_BASES.map(b=>b+ep);
 
   async function tryFetchJSON(urls, opts){
     let lastErr=null, lastText='';
@@ -160,126 +126,34 @@
     throw lastErr || new Error('All REST bases failed');
   }
 
-  function isArabicText(str){ return /[\u0600-\u06FF]/.test(str||''); }
-  function toDisplayString(value){
-    if(value==null) return '';
-    if(typeof value==='string') return value.trim();
-    if(Array.isArray(value)) return value.map(v=>toDisplayString(v)).filter(Boolean).join(', ');
-    if(typeof value==='object') return toSpecsString(value);
-    return String(value);
-  }
-
-  async function translateToArabic(text){
-    const original=toDisplayString(text);
-    if(!original) return '';
-    if(isArabicText(original)) return original;
-    if(translationCache.has(original)) return translationCache.get(original);
-    const headers={'Content-Type':'application/json'};
-    const nonce=window?.wpApiSettings?.nonce;
-    if(nonce) headers['X-WP-Nonce']=nonce;
+  // Your working translate contract: {text,target,source,format} → {result.translated_text}
+  async function translateAR(text){
+    const payload = { text:String(text||''), target:AR_CODE, source:SOURCE_LANG||'', format:'text' };
+    const headers = { 'Content-Type':'application/json' };
+    const urls = apiURL('translate');
     try{
-      const payload={ text:original, target:'ar' };
-      const data=await tryFetchJSON(apiURL('translate'), { method:'POST', headers, body:JSON.stringify(payload) });
-      let translated='';
-      if(typeof data==='string') translated=data;
-      else if(data && typeof data==='object'){
-        translated=data.translated_text || data.translation || data.result || data.output || '';
-      }
-      translated=toDisplayString(translated)||original;
-      translationCache.set(original, translated);
-      return translated;
-    }catch(err){
-      console.warn('Translation failed, using original text.', err);
-      translationCache.set(original, original);
-      return original;
+      const res = await tryFetchJSON(urls, { method:'POST', headers, body:JSON.stringify(payload), credentials:'same-origin' });
+      const out = res?.result?.translated_text;
+      return (typeof out==='string' && out.trim()!=='') ? out : String(text||'');
+    }catch(_){
+      return String(text||''); // fall back gracefully
     }
   }
 
-  async function ensureArabic(value, fallback){
-    const primary=toDisplayString(value);
-    if(primary){
-      if(isArabicText(primary)) return primary;
-      const base=toDisplayString(fallback);
-      if(base && base!==primary){
-        const translated=await translateToArabic(base);
-        if(translated) return translated;
-      }
-      return translateToArabic(primary);
-    }
-    const base=toDisplayString(fallback);
-    if(!base) return '';
-    return translateToArabic(base);
-  }
+  // Init + Arabic labels
+  document.addEventListener('DOMContentLoaded', ()=>{
+    cache();
+    q('cameraOpenLbl').textContent = STR.openCamera;
+    actionBtn.textContent = STR.take;
+    cancelBtn.textContent = STR.cancel;
+    q('editVals').textContent = STR.edit;
+    addBtn.value = STR.add;
 
-  function extractFxRate(result){
-    const candidates=[
-      result?.fx_rate_gbp_usd,
-      result?.fx_rate_usd,
-      result?.fx_rate,
-      result?.fx?.gbp_usd,
-      result?.fx?.GBP_USD,
-      result?.fx?.GBPUSD,
-      result?.fx?.GBP?.USD,
-      result?.fx?.rates?.GBP_USD,
-      result?.fx?.rates?.GBP?.USD
-    ];
-    for(const cand of candidates){
-      const rate=extractNumber(cand);
-      if(!isNaN(rate) && rate>0) return rate;
-    }
-    return NaN;
-  }
-
-  async function fetchFxRate(){
-    if(cachedFxGBPUSD && cachedFxGBPUSD>0) return cachedFxGBPUSD;
-    const headers={'Content-Type':'application/json'};
-    const nonce=window?.wpApiSettings?.nonce;
-    if(nonce) headers['X-WP-Nonce']=nonce;
-    try{
-      const data=await tryFetchJSON(apiURL('convert-currency'), {
-        method:'POST',
-        headers,
-        body:JSON.stringify({ amount:1, from:'GBP', to:'USD' })
-      });
-      const rate=extractNumber(data?.amount ?? data?.value ?? data?.result ?? data?.usd ?? data);
-      if(!isNaN(rate) && rate>0){ cachedFxGBPUSD=rate; return rate; }
-    }catch(err){ console.warn('Unable to fetch FX rate GBP→USD.', err); }
-    return NaN;
-  }
-
-  function safeNumber(n){ return (typeof n==='number' && isFinite(n)) ? n : (!isNaN(n)? Number(n) : null); }
-
-  function deriveGBPInfo(result){
-    const low=safeNumber(extractNumber(result?.price_low_gbp ?? result?.low_gbp ?? result?.valuation_low_gbp ?? result?.gbp_low ?? result?.price_low));
-    const high=safeNumber(extractNumber(result?.price_high_gbp ?? result?.high_gbp ?? result?.valuation_high_gbp ?? result?.gbp_high ?? result?.price_high));
-    const single=safeNumber(extractNumber(result?.valuation_gbp ?? result?.gbp ?? result?.price_gbp ?? result?.price));
-    return {
-      low: low!=null ? low : null,
-      high: high!=null ? high : null,
-      single: single!=null ? single : null
-    };
-  }
-
-  async function deriveUSDInfo(result, gbpInfo){
-    let low=safeNumber(extractNumber(result?.price_low_usd ?? result?.low_usd ?? result?.valuation_low_usd ?? result?.usd_low));
-    let high=safeNumber(extractNumber(result?.price_high_usd ?? result?.high_usd ?? result?.valuation_high_usd ?? result?.usd_high));
-    let single=safeNumber(extractNumber(result?.valuation_usd ?? result?.usd ?? result?.price_usd));
-    let rate=extractFxRate(result);
-    if((low==null || high==null || single==null) && (rate==null || isNaN(rate) || rate<=0)){
-      rate=await fetchFxRate();
-    }
-    if(rate && rate>0){
-      if(low==null && gbpInfo.low!=null) low=gbpInfo.low*rate;
-      if(high==null && gbpInfo.high!=null) high=gbpInfo.high*rate;
-      if(single==null && gbpInfo.single!=null) single=gbpInfo.single*rate;
-    }
-    return {
-      low: low!=null ? low : null,
-      high: high!=null ? high : null,
-      single: single!=null ? single : null,
-      rate: rate && rate>0 ? rate : null
-    };
-  }
+    openBtn.addEventListener('click', openCamera);
+    cancelBtn.addEventListener('click', cancelCamera);
+    actionBtn.addEventListener('click', handleAction);
+    q('editVals').addEventListener('click', ()=>['text1','text2','text3','text4','text5'].forEach(id=>q(id).readOnly=false));
+  });
 
   function cache(){
     video=q('video'); photo=q('photo'); dock=q('cameraDock');
@@ -287,14 +161,6 @@
     valuationForm=q('valuationForm'); valuationMeta=q('valuationMeta'); errorBox=q('errorBox');
     formErrorBox=q('formErrorBox'); formSuccessBox=q('formSuccessBox'); addBtn=q('addBtn');
   }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    cache();
-    openBtn.addEventListener('click', openCamera);
-    cancelBtn.addEventListener('click', cancelCamera);
-    actionBtn.addEventListener('click', handleAction);
-    const edit=q('editVals'); if(edit){ edit.addEventListener('click', ()=>['text1','text2','text3','text4','text5'].forEach(id=>q(id).readOnly=false)); }
-  });
 
   async function openCamera(){
     try{
@@ -306,13 +172,27 @@
       openBtn.classList.add('hidden');
       window.scrollTo({ top:0, left:0, behavior:'auto' });
       setMode('take'); hasCapture=false; photo.style.display='none';
-    }catch(e){ showDockError('حدث خطأ في أذونات الكاميرا.'); console.error(e); }
+    }catch(e){ showDockError(STR.camError); console.error(e); }
   }
   function stopStream(){ const s=video?.srcObject; if(s){ try{s.getTracks().forEach(t=>t.stop());}catch(_){}} if(video){ video.srcObject=null; video.src=''; } }
   function cancelCamera(){ stopStream(); document.body.classList.remove('noscroll'); dock.classList.add('hidden'); openBtn.classList.remove('hidden'); photo.style.display='none'; hasCapture=false; setMode('take'); }
-  function setMode(m){ mode=m; actionBtn.classList.remove('loading'); actionBtn.disabled=false; actionBtn.innerHTML=(m==='take'?'التقاط':'الحصول على تقييم'); actionBtn.className='btnPrimary'; }
-  function setLoading(on){ if(on){ actionBtn.disabled=true; actionBtn.classList.add('loading'); actionBtn.innerHTML='جارٍ التقييم<span class="dots"><span>.</span><span>.</span><span>.</span></span>'; } else { actionBtn.disabled=false; actionBtn.classList.remove('loading'); actionBtn.innerHTML=(mode==='take')?'التقاط':'الحصول على تقييم'; } }
-  function handleAction(){ if(mode==='take'){ doCapture(); setMode('value'); } else { setLoading(true); getValuation().catch(err=>showDockError(err?.message||String(err))).finally(()=>setLoading(false)); } }
+
+  function setMode(m){
+    mode=m;
+    actionBtn.classList.remove('loading'); actionBtn.disabled=false;
+    actionBtn.textContent = (m==='take'? STR.take : STR.getVal);
+    actionBtn.className='btnPrimary';
+  }
+  function setLoading(on){
+    if(on){
+      actionBtn.disabled=true; actionBtn.classList.add('loading');
+      actionBtn.innerHTML = `${STR.valuing}<span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+    }else{
+      actionBtn.disabled=false; actionBtn.classList.remove('loading');
+      actionBtn.textContent = (mode==='take'? STR.take : STR.getVal);
+    }
+  }
+  function handleAction(){ if(mode==='take'){ doCapture(); setMode('value'); } else { setLoading(true); getValuationArabic().catch(err=>showDockError(err?.message||String(err))).finally(()=>setLoading(false)); } }
 
   function doCapture(){
     clearDockError(); clearFormMessages();
@@ -325,70 +205,47 @@
   function toSpecsString(s){ if(!s) return ''; if(typeof s==='string') return s; if(Array.isArray(s)) return s.filter(Boolean).join(', '); if(typeof s==='object'){ return Object.entries(s).filter(([,v])=>v!=null&&v!=='').map(([k,v])=>typeof v==='object'?`${k}: ${toSpecsString(v)}`:`${k}: ${v}`).join(', ');} return String(s); }
   function extractNumber(x){ if(typeof x==='number'&&isFinite(x)) return x; if(typeof x==='string'){const s=x.replace(/,/g,''); const m=s.match(/-?\d+(?:\.\d+)?/); return m?parseFloat(m[0]):NaN;} if(Array.isArray(x)){for(const it of x){const n=extractNumber(it); if(!isNaN(n)) return n;} return NaN;} if(x&&typeof x==='object'){const pref=['amount','value','price','avg','average','median']; for(const k of pref){ if(k in x){ const n=extractNumber(x[k]); if(!isNaN(n)) return n; } } for(const v of Object.values(x)){ const n=extractNumber(v); if(!isNaN(n)) return n; }} return NaN; }
   function extractRange(v){ if(v&&typeof v==='object'){ for(const [a,b] of [['low','high'],['min','max'],['from','to']]){ if(a in v||b in v){ return {lo:extractNumber(v[a]), hi:extractNumber(v[b])}; } } } if(Array.isArray(v)&&v.length>=2){ return {lo:extractNumber(v[0]), hi:extractNumber(v[1])}; } if(typeof v==='string'){ const s=v.replace(/,/g,'').trim(); const m=s.match(/(\d+(?:\.\d+)?)\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)/i); if(m){ return {lo:parseFloat(m[1]), hi:parseFloat(m[2])}; } const n=extractNumber(v); return {lo:n, hi:NaN}; } const n=extractNumber(v); return {lo:n, hi:NaN}; }
-  function formatCurrency(v, currency, locale){
-    const nf=new Intl.NumberFormat(locale,{style:'currency',currency});
-    const {lo,hi}=extractRange(v);
-    const okLo=!isNaN(lo), okHi=!isNaN(hi);
-    if(okLo&&okHi) return nf.format(lo)+' – '+nf.format(hi);
-    if(okLo) return nf.format(lo);
-    if(v&&typeof v==='object') return JSON.stringify(v);
-    return typeof v==='string'?v:'';
-  }
+  function formatGBP(v){ const nf=new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP'}); const {lo,hi}=extractRange(v); const okLo=!isNaN(lo), okHi=!isNaN(hi); if(okLo&&okHi) return nf.format(lo)+' – '+nf.format(hi); if(okLo) return nf.format(lo); if(v&&typeof v==='object') return JSON.stringify(v); return typeof v==='string'?v:''; }
 
   async function requestValuation(dataUrl){
     const headers={'Content-Type':'application/json'}; const nonce=window?.wpApiSettings?.nonce; if(nonce) headers['X-WP-Nonce']=nonce;
     return tryFetchJSON(apiURL('value-image'), { method:'POST', headers, body:JSON.stringify({ image:dataUrl }) });
   }
 
-  async function getValuation(){
+  // 1) احصل على التقييم ثم ترجم حقول العرض قبل تعبئة النموذج
+  async function getValuationArabic(){
     if(!hasCapture) doCapture();
     const result = await requestValuation(lastCapture);
 
-    const [category, brand, model, specs, translatedNotes] = await Promise.all([
-      ensureArabic(result.category_ar, result.category),
-      ensureArabic(result.brand_ar, result.brand),
-      ensureArabic(result.model_ar, result.model),
-      ensureArabic(result.specs_ar, result.specs),
-      ensureArabic(result.notes_ar, result.notes)
+    // English/raw → Arabic BEFORE showing
+    const srcCategory = result.category || '';
+    const srcBrand    = result.brand || '';
+    const srcModel    = result.model || '';
+    const srcSpecs    = toSpecsString(result.specs);
+    const srcNotes    = (result.notes && typeof result.notes==='object') ? JSON.stringify(result.notes) : (result.notes || '');
+
+    const [arCategory, arBrand, arModel, arSpecs, arNotes] = await Promise.all([
+      translateAR(srcCategory),
+      translateAR(srcBrand),
+      translateAR(srcModel),
+      translateAR(srcSpecs),
+      translateAR(srcNotes)
     ]);
 
-    q('text1').value = category;
-    q('text2').value = brand;
-    q('text3').value = model;
-    q('text4').value = toDisplayString(specs);
+    // Fill Arabic in the form
+    q('text1').value = arCategory;
+    q('text2').value = arBrand;
+    q('text3').value = arModel;
+    q('text4').value = arSpecs;
+    q('text5').value = formatGBP((result.price_low_gbp!=null && result.price_high_gbp!=null)? {low:result.price_low_gbp, high:result.price_high_gbp} : (result.valuation_gbp ?? result.gbp ?? result.price_gbp));
 
-    const gbpInfo = deriveGBPInfo(result);
-    lastLowGBP = gbpInfo.low;
-    lastHighGBP = gbpInfo.high;
-    lastValuationGBP = gbpInfo.single;
-
-    const usdInfo = await deriveUSDInfo(result, gbpInfo);
-    lastLowUSD = usdInfo.low;
-    lastHighUSD = usdInfo.high;
-    lastValuationUSD = usdInfo.single;
-    lastFxGBPUSD = usdInfo.rate || (cachedFxGBPUSD && cachedFxGBPUSD>0 ? cachedFxGBPUSD : null);
-
-    let usdDisplaySource=null;
-    if(lastLowUSD!=null && lastHighUSD!=null){ usdDisplaySource={low:lastLowUSD, high:lastHighUSD}; }
-    else if(lastLowUSD!=null){ usdDisplaySource=lastLowUSD; }
-    else if(lastHighUSD!=null){ usdDisplaySource=lastHighUSD; }
-    else if(lastValuationUSD!=null){ usdDisplaySource=lastValuationUSD; }
-    else {
-      const rawDisplay = toDisplayString(result.valuation_usd_display ?? result.valuation_usd ?? result.valuation ?? result.price_usd);
-      usdDisplaySource = rawDisplay || '';
-    }
-    const usdDisplay = typeof usdDisplaySource==='string' ? usdDisplaySource : formatCurrency(usdDisplaySource, 'USD', 'ar-EG');
-    lastUSDDisplay = usdDisplay || '';
-    q('text5').value = lastUSDDisplay;
-
+    lastLowGBP  = (result.price_low_gbp  != null) ? Number(result.price_low_gbp)  : null;
+    lastHighGBP = (result.price_high_gbp != null) ? Number(result.price_high_gbp) : null;
     lastConfidence = (typeof result.confidence==='number' && isFinite(result.confidence)) ? result.confidence : null;
-    lastNotes = translatedNotes || '';
+    lastNotes = arNotes;
 
     valuationMeta.style.display='block';
-    const confidenceDisplay = lastConfidence!=null ? Number(lastConfidence).toLocaleString('ar-EG',{minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
-    const notesDisplay = lastNotes || '—';
-    const usdMetaDisplay = lastUSDDisplay || '—';
-    valuationMeta.innerHTML=`<div><strong style="color:var(--text)">مستوى الثقة:</strong> ${confidenceDisplay}</div><div><strong style="color:var(--text)">القيمة بالدولار الأمريكي:</strong> ${escapeHtml(usdMetaDisplay)}</div><div><strong style="color:var(--text)">ملاحظات:</strong> ${escapeHtml(notesDisplay)}</div>`;
+    valuationMeta.innerHTML=`<div><strong style="color:var(--text)">${STR.confidence}:</strong> ${lastConfidence!=null? lastConfidence.toFixed(2) : '—'}</div><div><strong style="color:var(--text)">${STR.notes}:</strong> ${lastNotes || '—'}</div>`;
 
     ['text1','text2','text3','text4','text5'].forEach(id=>q(id).readOnly=true);
 
@@ -396,11 +253,11 @@
     valuationForm.classList.remove('hidden'); valuationForm.scrollIntoView({behavior:'smooth', block:'start'});
   }
 
-  // Save asset on Add
+  // 2) الحفظ بالعربية
   window.validateForm = async function(e){
     e.preventDefault(); clearFormMessages();
-    if(!lastCapture){ showFormError('لا توجد صورة للحفظ. يرجى التقاط صورة أولاً.'); return; }
-    const button=q('addBtn'); const original=button.value||'إضافة'; button.disabled=true; button.value='جارٍ الحفظ…';
+    if(!lastCapture){ showFormError(STR.noPhoto); return; }
+    const button=q('addBtn'); const original=button.value||STR.add; button.disabled=true; button.value=STR.saving;
     try{
       const payload={
         image:lastCapture,
@@ -408,53 +265,50 @@
         brand:(q('text2').value||'').trim(),
         model:(q('text3').value||'').trim(),
         specs:(q('text4').value||'').trim(),
-        valuation_usd:(q('text5').value||'').trim()
+        valuation_gbp:(q('text5').value||'').trim(),
+        custom_fields:{ Language:'Arabic', LanguageCode:'ar', Currency:'GBP' }
       };
-      payload.custom_fields={ ...(payload.custom_fields||{}), Language:'Arabic', Currency:'USD' };
-      if(lastValuationUSD!=null) payload.valuation_usd_numeric=lastValuationUSD;
       if(lastLowGBP!=null) payload.price_low_gbp=lastLowGBP;
       if(lastHighGBP!=null) payload.price_high_gbp=lastHighGBP;
-      if(lastLowUSD!=null) payload.price_low_usd=lastLowUSD;
-      if(lastHighUSD!=null) payload.price_high_usd=lastHighUSD;
-      if(lastValuationGBP!=null) payload.valuation_gbp=lastValuationGBP;
-      if(lastFxGBPUSD!=null) payload.fx_rate_gbp_usd=lastFxGBPUSD;
       if(lastConfidence!=null) payload.confidence=lastConfidence;
       if(lastNotes) payload.notes=lastNotes;
-      if(lastUSDDisplay) payload.valuation_usd_display=lastUSDDisplay;
 
       const headers={'Content-Type':'application/json'}; const nonce=window?.wpApiSettings?.nonce; if(nonce) headers['X-WP-Nonce']=nonce;
       const data = await tryFetchJSON(apiURL('save-asset'), { method:'POST', headers, body:JSON.stringify(payload) });
 
-      showFormSuccess('تم حفظ الأصل.' + (data?.link? ' <a href="'+data.link+'">عرض</a>' : ''));
-      button.value='تم الحفظ ✓';
+      showFormSuccess(STR.savedArabic + (data?.link? ` <a href="${data.link}">عرض</a>` : ''));
+      button.value=STR.saved;
 
-      // If a table exists on the page, prepend the row (desktop has 9 cols; mobile CSS hides others)
+      // OPTIONAL: أضف صف معاينة محلي مع تاريخ عربي
       const table=document.getElementById('aiaasTable');
       if(table){
         const tbody=table.querySelector('tbody')||table;
         const tr=document.createElement('tr');
+        const title = ((payload.brand + ' ' + payload.model).trim()) || payload.category || 'أصل';
+        const arDate = new Intl.DateTimeFormat('ar-EG',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
         tr.innerHTML=`
-          <td><img src="${lastCapture}" class="aiaas-thumb"></td>
-          <td>${escapeHtml(((payload.brand+' '+payload.model).trim()) || payload.category || 'أصل')}</td>
-          <td class="aiaas-hide-sm">${escapeHtml(payload.category||'')}</td>
-          <td>${escapeHtml(payload.brand||'')}</td>
-          <td>${escapeHtml(payload.model||'')}</td>
-          <td class="aiaas-hide-sm">${escapeHtml(payload.specs||'')}</td>
-          <td>${escapeHtml(payload.valuation_usd || payload.valuation_usd_display || lastUSDDisplay || '')}</td>
-          <td class="aiaas-hide-sm">${lastConfidence!=null? Number(lastConfidence).toLocaleString('ar-EG') : '—'}</td>
-          <td class="aiaas-hide-sm">${new Date().toLocaleDateString('ar-EG')}</td>`;
+          <td><img src="${lastCapture}" class="aiaas-thumb" alt=""></td>
+          <td dir="rtl">${escapeHtml(title)}</td>
+          <td class="aiaas-hide-sm" dir="rtl">${escapeHtml(payload.category||'')}</td>
+          <td dir="rtl">${escapeHtml(payload.brand||'')}</td>
+          <td dir="rtl">${escapeHtml(payload.model||'')}</td>
+          <td class="aiaas-hide-sm" dir="rtl">${escapeHtml(payload.specs||'')}</td>
+          <td dir="rtl">${escapeHtml(payload.valuation_gbp||'')}</td>
+          <td class="aiaas-hide-sm">${lastConfidence!=null? String(lastConfidence) : '—'}</td>
+          <td class="aiaas-hide-sm">${arDate}</td>`;
         tbody.insertBefore(tr, tbody.firstChild);
       }
     }catch(err){
       console.error(err);
       showFormError(err?.message || String(err));
-      button.value='إعادة المحاولة';
-    }finally{
-      setTimeout(()=>{ button.disabled=false; if(button.value!=='تم الحفظ ✓') button.value=original; }, 1500);
+      button.value=original;
+      button.disabled=false;
+      return;
     }
+    setTimeout(()=>{ button.disabled=false; }, 1200);
   };
 
-  // UI helpers
+  // helpers (UI)
   function showDockError(msg){ errorBox.style.display='block'; errorBox.textContent=msg; }
   function clearDockError(){ errorBox.style.display='none'; errorBox.textContent=''; }
   function showFormError(msg){ formErrorBox.style.display='block'; formErrorBox.innerHTML=sanitizeHtml(msg); }
@@ -463,7 +317,7 @@
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   function sanitizeHtml(s){ return String(s).replace(/<(?!\/?a(\s|>))/g,'&lt;').replace(/javascript:/gi,''); }
 
-  // Cancel form
+  // إلغاء النموذج
   window.cancelForm=function(){ location.reload(); };
 })();
 </script>
