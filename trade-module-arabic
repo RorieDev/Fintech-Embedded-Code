@@ -72,8 +72,13 @@
     .kpi-item{display:flex;flex-direction:column;gap:4px}
     @media(max-width:640px){.kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
 
+    .table-scroll{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+    .table-scroll::-webkit-scrollbar{height:6px}
+    .table-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.16);border-radius:999px}
+    .table-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,.04)}
+
     .table{width:100%;border-collapse:separate;border-spacing:0 10px}
-    .table th{font-size:12px;text-align:left;color:#555;font-weight:700;padding:0 10px}
+    .table th{font-size:12px;text-align:left;color:#555;font-weight:700;padding:0 10px;white-space:nowrap}
     .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
 
@@ -95,12 +100,14 @@
       .total-summary td.value{text-align:left}
     }
     @media (max-width:640px){
-      .table thead{display:none}
-      .table tr{display:block;margin:0 0 12px 0;border-radius:12px;overflow:hidden}
-      .table td{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-bottom:none}
+      .table-scroll{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px;padding-bottom:12px}
+      .table{min-width:600px;border-spacing:0 8px}
+      .table thead{display:table-header-group}
+      .table tr{display:table-row;border-radius:0}
+      .table td{display:table-cell;justify-content:initial;gap:0;border-bottom:1px solid var(--border);white-space:nowrap}
       .table td:last-child{border-bottom:1px solid var(--border)}
-      .table td>*{max-width:60%}
-      .table td::before{content:attr(data-label);font-weight:700;color:#555}
+      .table td>*{max-width:none}
+      .table td::before{content:none}
     }
 
     .notice{display:none;margin-bottom:14px;border-radius:12px;padding:12px 14px;border:1px solid #fde68a;background:#fffbeb;color:#92400e}
@@ -200,10 +207,12 @@
           <span class="label">المراكز المفتوحة</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
-          <table class="table" id="positions-table">
-            <thead><tr><th>الرمز</th><th>الكمية</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <div class="table-scroll">
+            <table class="table" id="positions-table">
+              <thead><tr><th>الرمز</th><th>الكمية</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
           <button class="btn btn-secondary" id="refreshPositions" type="button">تحديث</button>
         </div>
       </div>
@@ -215,10 +224,12 @@
           <span class="label">الطلبات الأخيرة</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
-          <table class="table" id="orders-table">
-            <thead><tr><th>الوقت</th><th>الرمز</th><th>النوع</th><th>الكمية</th><th>الحالة</th><th>إجراء</th></tr></thead>
-            <tbody></tbody>
-          </table>
+          <div class="table-scroll">
+            <table class="table" id="orders-table">
+              <thead><tr><th>الوقت</th><th>الرمز</th><th>النوع</th><th>الكمية</th><th>الحالة</th><th>إجراء</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
           <button class="btn btn-secondary" id="refreshOrders" type="button">تحديث</button>
         </div>
       </div>
