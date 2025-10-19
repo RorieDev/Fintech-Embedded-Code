@@ -1,0 +1,385 @@
+<!-- TamRor · Shariah Purification Card (Arabic)
+     - Overlay-safe inputs
+     - Aligned numeric columns (RTL-friendly)
+     - SYMBOL AUTOCOMPLETE (local seed + optional proxy live search) -->
+<div id="tamror-purification" class="tamror-root">
+  <style>
+    :root{
+      --bg:#ffffff; --text:#7A7A7A; --muted:#9aa3ab; --surface:#ffffff; --surface-2:#f6f8fb;
+      --accent:#FC6481; --accent-600:#e55773; --border:#e7edf4; --shadow:0 6px 24px rgba(16,24,40,.06);
+      --radius:16px; --control-h:44px; --ok:#16a34a; --bad:#ef4444;
+    }
+    .tamror-root{background:var(--bg); color:var(--text); font-family:"Work Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    .tamror-root *{font-family:"Work Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial}
+
+    .wrap{max-width:1100px;margin:0 auto;padding:0}
+    .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+
+    .h2{font-size:16px;font-weight:700;margin:0 0 12px 0;color:#333;letter-spacing:.2px}
+    .row{display:flex;gap:12px;flex-wrap:wrap; position:relative}
+    .col{flex:1 1 220px; min-width:220px; position:relative}
+
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block; cursor:text}
+    .input,.btn,select{
+      width:100%; background:#fff; color:var(--text); border:1px solid var(--border); border-radius:12px;
+      padding:10px 12px; font-size:15px; outline:none; box-sizing:border-box;
+      position:relative; z-index:10; pointer-events:auto; touch-action:manipulation;
+    }
+    .input:focus{box-shadow:0 0 0 3px rgba(252,100,129,.15); border-color:var(--accent)}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(252,100,129,.35); min-height:var(--control-h)}
+    .btn:hover{background:var(--accent-600)}
+    .btn-secondary{background:#fff;color:#7A7A7A;border:1px solid var(--border);box-shadow:none}
+    .btn-ghost{background:#fff;color:#9aa3ab;border:1px dashed var(--border)}
+    .helper{margin-top:8px;font-size:13px;color:var(--muted)}
+    .note{font-size:12px;color:#555;background:var(--surface-2);border:1px solid var(--border);padding:8px 10px;border-radius:10px;margin-top:10px}
+
+    /* ===== Autocomplete dropdown ===== */
+    .ac-wrap{position:relative}
+    .ac-list{
+      position:absolute; z-index:30; inset-inline:0; top:calc(100% + 6px);
+      background:#fff; border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
+      max-height:260px; overflow:auto; display:none; padding:6px;
+    }
+    .ac-item{
+      padding:8px 10px; border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:8px;
+      font-size:14px; color:#333;
+    }
+    .ac-item .sym{font-weight:800; letter-spacing:.2px}
+    .ac-item .nm{color:#7A7A7A; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .ac-item:hover{background:#f6f8fb}
+
+    /* ===== Table alignment ===== */
+    .table{width:100%;border-collapse:separate;border-spacing:0 10px;margin-top:14px; table-layout:fixed}
+    .table thead th{font-size:12px;text-align:right;color:#555;font-weight:700;padding:0 10px}
+    .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
+    .table tr{box-shadow:var(--shadow)}
+    .table td.actions{display:flex;gap:8px;justify-content:flex-start}
+
+    /* Column widths */
+    .table col.c-sym   { width:14% }
+    .table col.c-num   { width:18% }
+    .table col.c-pct   { width:14% }
+    .table col.c-notes { width:auto }
+    .table col.c-act   { width:12% }
+
+    /* Numeric cells: right edge, but LTR flow to avoid RTL punctuation issues */
+    .table td.num, .table th.th-num{
+      text-align:right; direction:ltr; unicode-bidi:plaintext; font-variant-numeric:tabular-nums;
+    }
+    .table td.sym, .table th.th-sym{ text-align:right; white-space:nowrap }
+    .table td.act, .table th.th-act{ text-align:left }
+
+    .totals{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+    .totals .sum{font-weight:800;color:#333}
+
+    @media (max-width:680px){
+      .table thead{display:none}
+      .table tr{display:block;margin:0 0 12px 0;border-radius:12px;overflow:hidden}
+      .table td{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-bottom:none}
+      .table td:last-child{border-bottom:1px solid var(--border)}
+      .table td>*{max-width:60%}
+      .table td::before{content:attr(data-label);font-weight:700;color:#555}
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+  <div class="wrap">
+    <div class="card" id="purifyCard">
+      <div class="h2">تنقية الأرباح (مطابقة الشريعة)</div>
+
+      <!-- Inputs -->
+      <div class="row" dir="rtl">
+        <div class="col" data-focus="#p_symbol">
+          <label class="label" for="p_symbol">الرمز</label>
+          <div class="ac-wrap">
+            <input id="p_symbol" class="input" placeholder="مثال: AAPL" autocomplete="off"/>
+            <div id="p_ac_list" class="ac-list" role="listbox" aria-label="اقتراحات الرموز"></div>
+          </div>
+        </div>
+        <div class="col" data-focus="#p_dividend">
+          <label class="label" for="p_dividend">الأرباح المستلمة (USD)</label>
+          <input id="p_dividend" class="input" type="number" step="0.01" min="0" placeholder="0.00" inputmode="decimal"/>
+        </div>
+        <div class="col" data-focus="#p_pct">
+          <label class="label" for="p_pct">نسبة الإيراد غير المتوافق (%)</label>
+          <input id="p_pct" class="input" type="number" step="0.01" min="0" max="100" placeholder="مثلاً 3.25" inputmode="decimal"/>
+        </div>
+        <div class="col" style="display:flex; align-items:flex-end; gap:8px; min-width:220px">
+          <button id="p_fetch" class="btn btn-secondary" type="button">جلب النسبة من API</button>
+          <button id="p_add" class="btn" type="button">إضافة إلى السجل</button>
+        </div>
+      </div>
+
+      <div class="helper" dir="rtl">
+        يتم حساب التبرع الواجب: <b>الأرباح × نسبة الإيراد غير المتوافق</b>.
+        يمكنك إدخال النسبة يدويًا أو جلبها من خادمك (إن توفرت).
+      </div>
+
+      <!-- Ledger -->
+      <table class="table" id="p_table" dir="rtl" aria-live="polite">
+        <colgroup>
+          <col class="c-sym">
+          <col class="c-num">
+          <col class="c-pct">
+          <col class="c-num">
+          <col class="c-notes">
+          <col class="c-act">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="th-sym">الرمز</th>
+            <th class="th-num">الأرباح (USD)</th>
+            <th class="th-num">نسبة غير متوافق (%)</th>
+            <th class="th-num">التبرع الواجب (USD)</th>
+            <th class="th-notes">ملاحظات</th>
+            <th class="th-act">إجراء</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <!-- Totals & Actions -->
+      <div class="totals" dir="rtl">
+        <div>الإجمالي الواجب التبرع به:</div>
+        <div class="sum" id="p_total">$0.00</div>
+      </div>
+
+      <div class="row" style="margin-top:10px" dir="rtl">
+        <div class="col" style="flex:0 0 auto; display:flex; gap:8px">
+          <button id="p_export" class="btn btn-secondary" type="button">تصدير CSV</button>
+          <button id="p_clear" class="btn btn-ghost" type="button">مسح السجل</button>
+        </div>
+        <div class="col" style="flex:1">
+          <div class="note">
+            الملاحظة: تعتمد منهجية التنقية على المعيار المتبع (مثل AAOIFI أو معايير المؤشرات الإسلامية).
+            يستخدم هذا النموذج نسبة <b>الإيرادات غير المتوافقة</b> لتنقية أرباح التوزيعات. عدّل النسبة يدويًا عند الحاجة.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const ORIGIN = window.location.origin || (location.protocol + '//' + location.host);
+      const SHARIA_API = ORIGIN + '/wp-json/aiaas/v1/sharia-check';
+      const PROXY_BASE = '/wp-json/alpaca/v1';   // optional live search
+      const $ = (id)=>document.getElementById(id);
+
+      /* ================== Helpers ================== */
+      const fmtUSD = (n)=> (n==null || isNaN(+n)) ? '$0.00' : (+n).toLocaleString(undefined,{style:'currency',currency:'USD'});
+      const clamp = (v,min,max)=> Math.min(max, Math.max(min, v));
+      const normSym = (s)=> String(s||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+      const debounce = (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
+      const escapeHTML = (s)=> String(s).replace(/[<>&"]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+
+      /* ================== Autocomplete ================== */
+      const AC_SEED = ["AAPL","TSLA","NVDA","AMZN","GOOG","META","MSFT","ORCL","NFLX","ADBE","CRM","AMD","INTC","BA","DIS","V","MA","JPM","BAC","WFC","QCOM","MU","TXN","AVGO","COIN","PYPL","SQ","SHOP","UBER","SNOW","PANW","NIO","BABA","PDD","JD","T","VZ","ASML","SAP","NOW"];
+      const acList = $('p_ac_list');
+      const symInput = $('p_symbol');
+      const amountInput = $('p_dividend');
+
+      function closeAC(){ acList.style.display = 'none'; acList.innerHTML=''; }
+      function openAC(){ if(acList.innerHTML) acList.style.display='block'; }
+
+      function acRender(items){
+        if(!items || !items.length){ closeAC(); return; }
+        acList.innerHTML = items.slice(0,12).map(({s,n})=>{
+          const name = n ? `<span class="nm">${escapeHTML(n)}</span>` : '';
+          return `<div class="ac-item" data-s="${escapeHTML(s)}"><span class="sym">${escapeHTML(s)}</span>${name}</div>`;
+        }).join('');
+        acList.querySelectorAll('.ac-item').forEach(div=>{
+          div.onclick = ()=> selectSymbol(div.getAttribute('data-s'));
+        });
+        openAC();
+      }
+
+      // Try proxy live search (best effort)
+      async function searchProxy(q){
+        try{
+          const r = await fetch(`${PROXY_BASE}/market/search?q=${encodeURIComponent(q)}&_ts=${Date.now()}`, {cache:'no-store'});
+          if(!r.ok) return [];
+          const j = await r.json();
+          // Accept a few possible shapes
+          const list = Array.isArray(j) ? j : (Array.isArray(j?.symbols) ? j.symbols : []);
+          return list.map(it=>{
+            const s = normSym(it.symbol || it.S || it.ticker || it.code || it);
+            const n = String(it.name || it.companyName || it.description || '').trim();
+            return s ? {s, n} : null;
+          }).filter(Boolean);
+        }catch(_){ return []; }
+      }
+
+      const doAC = debounce(async ()=>{
+        const qRaw = symInput.value || '';
+        const q = normSym(qRaw);
+        if(!q){ closeAC(); return; }
+
+        // Local seed (prefix match)
+        const local = AC_SEED.filter(s=> s.indexOf(q)===0).map(s=>({s, n:''}));
+
+        // Best-effort live search; fall back to local only
+        const remote = await searchProxy(q);
+        // merge unique by symbol
+        const seen = new Set();
+        const merged = [...local, ...remote].filter(x=>{
+          if(seen.has(x.s)) return false; seen.add(x.s); return true;
+        });
+
+        acRender(merged.length ? merged : local);
+      }, 140);
+
+      function selectSymbol(s){
+        symInput.value = s.toUpperCase();
+        closeAC();
+        // Move focus to amount for fast entry
+        amountInput && amountInput.focus();
+      }
+
+      symInput.addEventListener('input', doAC);
+      symInput.addEventListener('focus', doAC);
+      symInput.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          const first = acList.querySelector('.ac-item');
+          if(first){ selectSymbol(first.getAttribute('data-s')); }
+          else { const v = normSym(symInput.value); if(v){ selectSymbol(v); } }
+        } else if(e.key === 'Escape'){
+          closeAC();
+        }
+      });
+      symInput.addEventListener('blur', ()=> setTimeout(closeAC, 120));
+
+      /* ================== Column focus (mobile nicety) ================== */
+      document.querySelectorAll('#tamror-purification .col[data-focus]').forEach(col=>{
+        col.addEventListener('click', ()=>{
+          const el = document.querySelector(col.getAttribute('data-focus'));
+          if(el && !el.disabled){ try{ el.focus({preventScroll:true}); el.select && el.select(); }catch(_){ el.focus(); } }
+        });
+      });
+
+      /* ================== Purification logic ================== */
+      const tbody = $('p_table').querySelector('tbody');
+
+      function calcDonation(dividend, pct){
+        const d = Number(dividend), p = Number(pct);
+        if(!isFinite(d) || !isFinite(p)) return 0;
+        return d * (p/100);
+      }
+
+      function recalcTotal(){
+        let sum = 0;
+        tbody.querySelectorAll('tr').forEach(tr=>{
+          const v = Number(tr.getAttribute('data-donation') || '0');
+          if(isFinite(v)) sum += v;
+        });
+        $('p_total').textContent = fmtUSD(sum);
+      }
+
+      function addRow(sym, dividend, pct, note){
+        const donation = calcDonation(dividend, pct);
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-donation', String(donation));
+        function td(label, html, cls){
+          const cell = document.createElement('td');
+          cell.setAttribute('data-label', label);
+          if (cls) cell.className = cls;
+          cell.innerHTML = html;
+          return cell;
+        }
+        tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(sym)}</b>`, 'sym'));
+        tr.appendChild(td('الأرباح (USD)', fmtUSD(dividend), 'num'));
+        tr.appendChild(td('نسبة غير متوافق (%)', (isFinite(pct)? (+pct).toFixed(2) : '—'), 'num'));
+        tr.appendChild(td('التبرع الواجب (USD)', `<b style="color:#333">${fmtUSD(donation)}</b>`, 'num'));
+        tr.appendChild(td('ملاحظات', note ? escapeHTML(note) : '', 'notes'));
+
+        const actions = document.createElement('td');
+        actions.className = 'actions act';
+        actions.setAttribute('data-label','إجراء');
+        const del = document.createElement('button');
+        del.className='btn btn-secondary'; del.type='button'; del.textContent='حذف';
+        del.onclick = ()=>{ tr.remove(); recalcTotal(); };
+        actions.appendChild(del);
+        tr.appendChild(actions);
+
+        tbody.insertBefore(tr, tbody.firstChild);
+        recalcTotal();
+      }
+
+      async function fetchRatio(sym){
+        const url = SHARIA_API + '?symbol=' + encodeURIComponent(sym) + '&_ts=' + Date.now();
+        const res = await fetch(url, { cache:'no-store' });
+        if(!res.ok){
+          const t = await res.text().catch(()=> '');
+          throw new Error('HTTP '+res.status+': '+t);
+        }
+        const j = await res.json();
+        return j && j.ratios && (j.ratios.non_compliant_revenue_pct ?? j.ratios.non_compliant_income_pct);
+      }
+
+      $('p_fetch').addEventListener('click', async ()=>{
+        const sym = normSym($('p_symbol').value);
+        if(!sym){ alert('أدخل رمز السهم أولًا.'); return; }
+        $('p_fetch').disabled = true; $('p_fetch').textContent = 'جارٍ الجلب…';
+        try{
+          const pct = Number(await fetchRatio(sym));
+          if(!isFinite(pct)){
+            alert('تعذر الحصول على النسبة من الخادم. أدخِلها يدويًا.');
+          }else{
+            $('p_pct').value = clamp(pct, 0, 100).toFixed(2);
+          }
+        }catch(e){
+          alert('خطأ في الجلب: ' + (e && e.message ? e.message : e));
+        }finally{
+          $('p_fetch').disabled = false; $('p_fetch').textContent = 'جلب النسبة من API';
+        }
+      });
+
+      $('p_add').addEventListener('click', ()=>{
+        const sym = normSym($('p_symbol').value);
+        const div = Number($('p_dividend').value);
+        const pct = Number($('p_pct').value);
+        if(!sym){ alert('الرمز مطلوب.'); return; }
+        if(!(isFinite(div) && div >= 0)){ alert('الأرباح غير صالحة.'); return; }
+        if(!(isFinite(pct) && pct >= 0 && pct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
+        addRow(sym, div, clamp(pct,0,100), '');
+        $('p_dividend').value = '';
+        $('p_dividend').focus();
+      });
+
+      $('p_clear').addEventListener('click', ()=>{
+        if(!confirm('مسح جميع السجلات؟')) return;
+        tbody.innerHTML = '';
+        recalcTotal();
+      });
+
+      $('p_export').addEventListener('click', ()=>{
+        const rows = [['Symbol','DividendUSD','NonCompliantPct','DonationUSD','Notes']];
+        tbody.querySelectorAll('tr').forEach(tr=>{
+          const tds = tr.querySelectorAll('td');
+          const sym = (tds[0]?.innerText || '').trim();
+          const div = (tds[1]?.innerText || '').replace(/[^0-9.\-]/g,'');
+          const pct = (tds[2]?.innerText || '').replace('%','').trim();
+          const don = (tds[3]?.innerText || '').replace(/[^0-9.\-]/g,'');
+          const note= (tds[4]?.innerText || '').trim();
+          rows.push([sym, div, pct, don, note]);
+        });
+        const total = $('p_total').textContent.replace(/[^0-9.\-]/g,'');
+        rows.push(['TOTAL','','',''+total,'']);
+
+        const csv = rows.map(r=> r.map(v=>{
+          const s = String(v==null?'':v);
+          return /[,"\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+        }).join(',')).join('\n');
+
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'tamror_sharia_purification.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=> URL.revokeObjectURL(url), 2000);
+      });
+    })();
+  </script>
+</div>
