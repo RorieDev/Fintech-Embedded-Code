@@ -57,11 +57,11 @@
     .table td.actions{display:flex;gap:8px;justify-content:flex-start}
 
     /* Column widths */
-    .table col.c-sym   { width:14% }
-    .table col.c-num   { width:18% }
-    .table col.c-pct   { width:14% }
-    .table col.c-notes { width:auto }
-    .table col.c-act   { width:12% }
+    .table col.c-sym   { width:16% }
+    .table col.c-num   { width:20% }
+    .table col.c-pct   { width:16% }
+    .table col.c-don   { width:auto }
+    .table col.c-act   { width:14% }
 
     /* Numeric cells: right edge, but LTR flow to avoid RTL punctuation issues */
     .table td.num, .table th.th-num{
@@ -129,8 +129,7 @@
             <col class="c-sym">
             <col class="c-num">
             <col class="c-pct">
-            <col class="c-notes">
-            <col class="c-num">
+            <col class="c-don">
             <col class="c-act">
           </colgroup>
           <thead>
@@ -138,7 +137,6 @@
               <th class="th-sym">الرمز</th>
               <th class="th-num">الأرباح (USD)</th>
               <th class="th-num">نسبة غير متوافق (%)</th>
-              <th class="th-notes">ملاحظات</th>
               <th class="th-num">التبرع الواجب (USD)</th>
               <th class="th-act">إجراء</th>
             </tr>
@@ -179,7 +177,15 @@
       const fmtUSD = (n)=> (n==null || isNaN(+n)) ? '$0.00' : (+n).toLocaleString(undefined,{style:'currency',currency:'USD'});
       const clamp = (v,min,max)=> Math.min(max, Math.max(min, v));
       const normSym = (s)=> String(s||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
-      const debounce = (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
+      const debounce = (fn,ms)=>{
+        let t;
+        const debounced = (...a)=>{
+          clearTimeout(t);
+          t = setTimeout(()=>{ t = null; fn(...a); }, ms);
+        };
+        debounced.cancel = ()=>{ clearTimeout(t); t = null; };
+        return debounced;
+      };
       const escapeHTML = (s)=> String(s).replace(/[<>&"]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
 
       /* ================== Autocomplete ================== */
@@ -220,6 +226,10 @@
       }
 
       const doAC = debounce(async ()=>{
+        if(document.activeElement !== symInput){
+          closeAC();
+          return;
+        }
         const qRaw = symInput.value || '';
         const q = normSym(qRaw);
         if(!q){ closeAC(); return; }
@@ -236,6 +246,7 @@
 
       function selectSymbol(s){
         symInput.value = s.toUpperCase();
+        doAC.cancel && doAC.cancel();
         closeAC();
         amountInput && amountInput.focus();
       }
@@ -281,7 +292,7 @@
         $('p_total').textContent = fmtUSD(sum);
       }
 
-      function addRow(sym, dividend, pct, note){
+      function addRow(sym, dividend, pct){
         const donation = calcDonation(dividend, pct);
         const tr = document.createElement('tr');
         tr.setAttribute('data-donation', String(donation));
@@ -295,7 +306,6 @@
         tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(sym)}</b>`, 'sym'));
         tr.appendChild(td('الأرباح (USD)', fmtUSD(dividend), 'num'));
         tr.appendChild(td('نسبة غير متوافق (%)', (isFinite(pct)? (+pct).toFixed(2) : '—'), 'num'));
-        tr.appendChild(td('ملاحظات', note ? escapeHTML(note) : '', 'notes'));
         tr.appendChild(td('التبرع الواجب (USD)', `<b style="color:#333">${fmtUSD(donation)}</b>`, 'num'));
 
         const actions = document.createElement('td');
@@ -347,7 +357,7 @@
         if(!sym){ alert('الرمز مطلوب.'); return; }
         if(!(isFinite(div) && div >= 0)){ alert('الأرباح غير صالحة.'); return; }
         if(!(isFinite(pct) && pct >= 0 && pct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
-        addRow(sym, div, clamp(pct,0,100), '');
+        addRow(sym, div, clamp(pct,0,100));
         symInput.value = '';
         amountInput.value = '';
         pctInput.value = '';
@@ -366,18 +376,17 @@
       });
 
       $('p_export').addEventListener('click', ()=>{
-        const rows = [['Symbol','DividendUSD','NonCompliantPct','Notes','DonationUSD']];
+        const rows = [['Symbol','DividendUSD','NonCompliantPct','DonationUSD']];
         tbody.querySelectorAll('tr').forEach(tr=>{
           const tds = tr.querySelectorAll('td');
           const sym = (tds[0]?.innerText || '').trim();
           const div = (tds[1]?.innerText || '').replace(/[^0-9.\-]/g,'');
           const pct = (tds[2]?.innerText || '').replace('%','').trim();
-          const note= (tds[3]?.innerText || '').trim();
-          const don = (tds[4]?.innerText || '').replace(/[^0-9.\-]/g,'');
-          rows.push([sym, div, pct, note, don]);
+          const don = (tds[3]?.innerText || '').replace(/[^0-9.\-]/g,'');
+          rows.push([sym, div, pct, don]);
         });
         const total = $('p_total').textContent.replace(/[^0-9.\-]/g,'');
-        rows.push(['TOTAL','','','', ''+total]);
+        rows.push(['TOTAL','','', ''+total]);
 
         const csv = rows.map(r=> r.map(v=>{
           const s = String(v==null?'':v);
@@ -391,6 +400,13 @@
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=> URL.revokeObjectURL(url), 2000);
       });
+
+      const donateBtn = Array.from(document.querySelectorAll('#tamror-purification button, #tamror-purification a'))
+        .find(btn=> btn.textContent && /تبرع|Donate/i.test(btn.textContent));
+      if(donateBtn){
+        donateBtn.classList.add('btn');
+        donateBtn.classList.remove('btn-secondary','btn-ghost');
+      }
     })();
   </script>
 </div>
