@@ -1,7 +1,8 @@
 <!-- TamRor · Shariah Purification Card (Arabic)
      - Overlay-safe inputs
      - Aligned numeric columns (RTL-friendly)
-     - SYMBOL AUTOCOMPLETE (local seed + optional proxy live search) -->
+     - SYMBOL AUTOCOMPLETE (local seed + optional proxy live search)
+     - Mobile table fix: keep columns, enable horizontal scroll -->
 <div id="tamror-purification" class="tamror-root">
   <style>
     :root{
@@ -30,7 +31,7 @@
     .btn:hover{background:var(--accent-600)}
     .btn-secondary{background:#fff;color:#7A7A7A;border:1px solid var(--border);box-shadow:none}
     .btn-ghost{background:#fff;color:#9aa3ab;border:1px dashed var(--border)}
-    .helper{margin-top:8px;font-size:13px;color:var(--muted)}
+    .helper{margin-top:8px;font-size:13px;color:#9aa3ab}
     .note{font-size:12px;color:#555;background:var(--surface-2);border:1px solid var(--border);padding:8px 10px;border-radius:10px;margin-top:10px}
 
     /* ===== Autocomplete dropdown ===== */
@@ -72,13 +73,18 @@
     .totals{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
     .totals .sum{font-weight:800;color:#333}
 
+    /* ===== Mobile: keep columns, enable horizontal scroll ===== */
+    .table-shell{ width:100%; overflow-x:visible; }
     @media (max-width:680px){
-      .table thead{display:none}
-      .table tr{display:block;margin:0 0 12px 0;border-radius:12px;overflow:hidden}
-      .table td{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-bottom:none}
-      .table td:last-child{border-bottom:1px solid var(--border)}
-      .table td>*{max-width:60%}
-      .table td::before{content:attr(data-label);font-weight:700;color:#555}
+      .table-shell{
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+      }
+      .table{ min-width: 760px; }                 /* ensure columns have space */
+      .table thead{ display:table-header-group; } /* keep headers */
+      .table tr{ display:table-row; }
+      .table td, .table th{ display:table-cell; }
+      .table td::before{ content:none !important; } /* kill card labels */
     }
   </style>
 
@@ -116,28 +122,30 @@
         يمكنك إدخال النسبة يدويًا أو جلبها من خادمك (إن توفرت).
       </div>
 
-      <!-- Ledger -->
-      <table class="table" id="p_table" dir="rtl" aria-live="polite">
-        <colgroup>
-          <col class="c-sym">
-          <col class="c-num">
-          <col class="c-pct">
-          <col class="c-num">
-          <col class="c-notes">
-          <col class="c-act">
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="th-sym">الرمز</th>
-            <th class="th-num">الأرباح (USD)</th>
-            <th class="th-num">نسبة غير متوافق (%)</th>
-            <th class="th-num">التبرع الواجب (USD)</th>
-            <th class="th-notes">ملاحظات</th>
-            <th class="th-act">إجراء</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <!-- Ledger (wrapped for horizontal scroll on mobile) -->
+      <div class="table-shell">
+        <table class="table" id="p_table" dir="rtl" aria-live="polite">
+          <colgroup>
+            <col class="c-sym">
+            <col class="c-num">
+            <col class="c-pct">
+            <col class="c-num">
+            <col class="c-notes">
+            <col class="c-act">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="th-sym">الرمز</th>
+              <th class="th-num">الأرباح (USD)</th>
+              <th class="th-num">نسبة غير متوافق (%)</th>
+              <th class="th-num">التبرع الواجب (USD)</th>
+              <th class="th-notes">ملاحظات</th>
+              <th class="th-act">إجراء</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
 
       <!-- Totals & Actions -->
       <div class="totals" dir="rtl">
@@ -201,7 +209,6 @@
           const r = await fetch(`${PROXY_BASE}/market/search?q=${encodeURIComponent(q)}&_ts=${Date.now()}`, {cache:'no-store'});
           if(!r.ok) return [];
           const j = await r.json();
-          // Accept a few possible shapes
           const list = Array.isArray(j) ? j : (Array.isArray(j?.symbols) ? j.symbols : []);
           return list.map(it=>{
             const s = normSym(it.symbol || it.S || it.ticker || it.code || it);
@@ -216,12 +223,8 @@
         const q = normSym(qRaw);
         if(!q){ closeAC(); return; }
 
-        // Local seed (prefix match)
         const local = AC_SEED.filter(s=> s.indexOf(q)===0).map(s=>({s, n:''}));
-
-        // Best-effort live search; fall back to local only
         const remote = await searchProxy(q);
-        // merge unique by symbol
         const seen = new Set();
         const merged = [...local, ...remote].filter(x=>{
           if(seen.has(x.s)) return false; seen.add(x.s); return true;
@@ -233,7 +236,6 @@
       function selectSymbol(s){
         symInput.value = s.toUpperCase();
         closeAC();
-        // Move focus to amount for fast entry
         amountInput && amountInput.focus();
       }
 
@@ -339,11 +341,11 @@
       $('p_add').addEventListener('click', ()=>{
         const sym = normSym($('p_symbol').value);
         const div = Number($('p_dividend').value);
-        const pct = Number($('p_pct').value);
+        thePct = Number($('p_pct').value);
         if(!sym){ alert('الرمز مطلوب.'); return; }
         if(!(isFinite(div) && div >= 0)){ alert('الأرباح غير صالحة.'); return; }
-        if(!(isFinite(pct) && pct >= 0 && pct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
-        addRow(sym, div, clamp(pct,0,100), '');
+        if(!(isFinite(thePct) && thePct >= 0 && thePct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
+        addRow(sym, div, clamp(thePct,0,100), '');
         $('p_dividend').value = '';
         $('p_dividend').focus();
       });
