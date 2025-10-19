@@ -99,17 +99,17 @@
         <div class="col" data-focus="#p_symbol">
           <label class="label" for="p_symbol">الرمز</label>
           <div class="ac-wrap">
-            <input id="p_symbol" class="input" placeholder="مثال: AAPL" autocomplete="off"/>
+            <input id="p_symbol" class="input" autocomplete="off"/>
             <div id="p_ac_list" class="ac-list" role="listbox" aria-label="اقتراحات الرموز"></div>
           </div>
         </div>
         <div class="col" data-focus="#p_dividend">
           <label class="label" for="p_dividend">الأرباح المستلمة (USD)</label>
-          <input id="p_dividend" class="input" type="number" step="0.01" min="0" placeholder="0.00" inputmode="decimal"/>
+          <input id="p_dividend" class="input" type="number" step="0.01" min="0" inputmode="decimal"/>
         </div>
         <div class="col" data-focus="#p_pct">
           <label class="label" for="p_pct">نسبة الإيراد غير المتوافق (%)</label>
-          <input id="p_pct" class="input" type="number" step="0.01" min="0" max="100" placeholder="مثلاً 3.25" inputmode="decimal"/>
+          <input id="p_pct" class="input" type="number" step="0.01" min="0" max="100" inputmode="decimal"/>
         </div>
         <div class="col" style="display:flex; align-items:flex-end; gap:8px; min-width:220px">
           <button id="p_fetch" class="btn btn-secondary" type="button">جلب النسبة من API</button>
@@ -124,7 +124,7 @@
 
       <!-- Ledger (wrapped for horizontal scroll on mobile) -->
       <div class="table-shell">
-        <table class="table" id="p_table" dir="rtl" aria-live="polite">
+        <table class="table" id="p_table" dir="rtl" aria-live="polite" tabindex="-1">
           <colgroup>
             <col class="c-sym">
             <col class="c-num">
@@ -187,6 +187,7 @@
       const acList = $('p_ac_list');
       const symInput = $('p_symbol');
       const amountInput = $('p_dividend');
+      const pctInput = $('p_pct');
 
       function closeAC(){ acList.style.display = 'none'; acList.innerHTML=''; }
       function openAC(){ if(acList.innerHTML) acList.style.display='block'; }
@@ -262,7 +263,8 @@
       });
 
       /* ================== Purification logic ================== */
-      const tbody = $('p_table').querySelector('tbody');
+      const tableEl = $('p_table');
+      const tbody = tableEl.querySelector('tbody');
 
       function calcDonation(dividend, pct){
         const d = Number(dividend), p = Number(pct);
@@ -321,7 +323,7 @@
       }
 
       $('p_fetch').addEventListener('click', async ()=>{
-        const sym = normSym($('p_symbol').value);
+        const sym = normSym(symInput.value);
         if(!sym){ alert('أدخل رمز السهم أولًا.'); return; }
         $('p_fetch').disabled = true; $('p_fetch').textContent = 'جارٍ الجلب…';
         try{
@@ -329,7 +331,7 @@
           if(!isFinite(pct)){
             alert('تعذر الحصول على النسبة من الخادم. أدخِلها يدويًا.');
           }else{
-            $('p_pct').value = clamp(pct, 0, 100).toFixed(2);
+            pctInput.value = clamp(pct, 0, 100).toFixed(2);
           }
         }catch(e){
           alert('خطأ في الجلب: ' + (e && e.message ? e.message : e));
@@ -339,15 +341,22 @@
       });
 
       $('p_add').addEventListener('click', ()=>{
-        const sym = normSym($('p_symbol').value);
-        const div = Number($('p_dividend').value);
-        thePct = Number($('p_pct').value);
+        const sym = normSym(symInput.value);
+        const div = Number(amountInput.value);
+        const pct = Number(pctInput.value);
         if(!sym){ alert('الرمز مطلوب.'); return; }
         if(!(isFinite(div) && div >= 0)){ alert('الأرباح غير صالحة.'); return; }
-        if(!(isFinite(thePct) && thePct >= 0 && thePct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
-        addRow(sym, div, clamp(thePct,0,100), '');
-        $('p_dividend').value = '';
-        $('p_dividend').focus();
+        if(!(isFinite(pct) && pct >= 0 && pct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
+        addRow(sym, div, clamp(pct,0,100), '');
+        symInput.value = '';
+        amountInput.value = '';
+        pctInput.value = '';
+        closeAC();
+        try{
+          tableEl.focus({preventScroll:true});
+        }catch(_){
+          tableEl.focus();
+        }
       });
 
       $('p_clear').addEventListener('click', ()=>{
