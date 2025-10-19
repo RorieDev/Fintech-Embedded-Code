@@ -129,8 +129,8 @@
             <col class="c-sym">
             <col class="c-num">
             <col class="c-pct">
-            <col class="c-num">
             <col class="c-notes">
+            <col class="c-num">
             <col class="c-act">
           </colgroup>
           <thead>
@@ -138,8 +138,8 @@
               <th class="th-sym">الرمز</th>
               <th class="th-num">الأرباح (USD)</th>
               <th class="th-num">نسبة غير متوافق (%)</th>
-              <th class="th-num">التبرع الواجب (USD)</th>
               <th class="th-notes">ملاحظات</th>
+              <th class="th-num">التبرع الواجب (USD)</th>
               <th class="th-act">إجراء</th>
             </tr>
           </thead>
@@ -295,8 +295,8 @@
         tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(sym)}</b>`, 'sym'));
         tr.appendChild(td('الأرباح (USD)', fmtUSD(dividend), 'num'));
         tr.appendChild(td('نسبة غير متوافق (%)', (isFinite(pct)? (+pct).toFixed(2) : '—'), 'num'));
-        tr.appendChild(td('التبرع الواجب (USD)', `<b style="color:#333">${fmtUSD(donation)}</b>`, 'num'));
         tr.appendChild(td('ملاحظات', note ? escapeHTML(note) : '', 'notes'));
+        tr.appendChild(td('التبرع الواجب (USD)', `<b style="color:#333">${fmtUSD(donation)}</b>`, 'num'));
 
         const actions = document.createElement('td');
         actions.className = 'actions act';
@@ -366,18 +366,18 @@
       });
 
       $('p_export').addEventListener('click', ()=>{
-        const rows = [['Symbol','DividendUSD','NonCompliantPct','DonationUSD','Notes']];
+        const rows = [['Symbol','DividendUSD','NonCompliantPct','Notes','DonationUSD']];
         tbody.querySelectorAll('tr').forEach(tr=>{
           const tds = tr.querySelectorAll('td');
           const sym = (tds[0]?.innerText || '').trim();
           const div = (tds[1]?.innerText || '').replace(/[^0-9.\-]/g,'');
           const pct = (tds[2]?.innerText || '').replace('%','').trim();
-          const don = (tds[3]?.innerText || '').replace(/[^0-9.\-]/g,'');
-          const note= (tds[4]?.innerText || '').trim();
-          rows.push([sym, div, pct, don, note]);
+          const note= (tds[3]?.innerText || '').trim();
+          const don = (tds[4]?.innerText || '').replace(/[^0-9.\-]/g,'');
+          rows.push([sym, div, pct, note, don]);
         });
         const total = $('p_total').textContent.replace(/[^0-9.\-]/g,'');
-        rows.push(['TOTAL','','',''+total,'']);
+        rows.push(['TOTAL','','','', ''+total]);
 
         const csv = rows.map(r=> r.map(v=>{
           const s = String(v==null?'':v);
