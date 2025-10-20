@@ -73,7 +73,7 @@
     .kpi-item{display:flex;flex-direction:column;gap:4px}
     @media(max-width:640px){.kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
 
-    .table-scroll{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+    .table-scroll{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;direction:rtl}
     .table-scroll::-webkit-scrollbar{height:6px}
     .table-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.16);border-radius:999px}
     .table-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,.04)}
@@ -212,9 +212,9 @@
           <span class="label">المراكز المفتوحة</span>
         </button>
         <div class="accordion-body" data-accordion-panel>
-          <div class="table-scroll">
+          <div class="table-scroll" id="positions-scroll" dir="rtl">
             <table class="table" id="positions-table">
-              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>التوافق الشرعي</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
+              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th><th>تنقية</th><th>التوافق الشرعي</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -383,7 +383,7 @@
       return getPositions().then(function(list){
         var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
           purificationRelay = Object.create(null);
           lastPhysicalTotal = 0; updateTotalSummary(); return;
         }
@@ -396,12 +396,14 @@
           tr.appendChild(td("الرمز",p.symbol));
           tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
           tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
+          var profit = toValidNumber(p.unrealized_pl);
+          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
+          var purifyCell = createPurifyCell(sym, profit);
+          tr.appendChild(purifyCell);
           var shariaInfo = createShariaCell();
           tr.appendChild(shariaInfo.cell);
-          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
           var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
-          var profit = toValidNumber(p.unrealized_pl);
           var task = getSharia(p.symbol).then(function(res){
             var status = (res && res.status) || 'unknown';
             if(status === 'halal'){
@@ -430,11 +432,47 @@
         });
         Object.keys(purificationRelay).forEach(function(key){ if(!activeSymbols[key]){ delete purificationRelay[key]; } });
         lastPhysicalTotal = total; updateTotalSummary();
+        setTimeout(snapPositionsScrollRight, 0);
         return Promise.all(tasks);
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
         lastPhysicalTotal = null; updateTotalSummary();
       });
+    }
+
+    // ---- Purify pill and focus helpers ----
+    function focusPurificationTable(){
+      try{
+        var tbl = document.querySelector('#tamror-purification #p_table');
+        if(tbl){ tbl.scrollIntoView({behavior:'smooth', block:'center'}); try{ tbl.focus({preventScroll:true}); }catch(_){ tbl.focus(); } }
+      }catch(_){ }
+    }
+    function handoffPurification(sym, profit){
+      var s = (sym||'').toUpperCase(); var p = Number(profit);
+      if(!s || !(p>0)) { relayPurification(s, p, null); enqueuePurificationBridge({symbol:s, profit:p}); focusPurificationTable(); return; }
+      getSharia(s).then(function(res){
+        var ratio = extractNonCompliantRatio(res);
+        relayPurification(s, p, ratio);
+        enqueuePurificationBridge({symbol:s, profit:p, nonCompliantPct: ratio});
+        focusPurificationTable();
+      }).catch(function(){ relayPurification(s, p, null); enqueuePurificationBridge({symbol:s, profit:p}); focusPurificationTable(); });
+    }
+    function createPurifyCell(sym, profit){
+      var cell = document.createElement('td');
+      cell.setAttribute('data-label','تنقية');
+      var pill = document.createElement('span'); pill.className='sharia-pill';
+      var dot = document.createElement('span'); dot.className='dot';
+      var label = document.createElement('span'); label.textContent='تنقية';
+      pill.appendChild(dot); pill.appendChild(label);
+      pill.title = 'إرسال إلى سجل التنقية';
+      pill.onclick = function(){ handoffPurification(sym, profit); };
+      cell.appendChild(pill);
+      return cell;
+    }
+    function snapPositionsScrollRight(){
+      var sc = document.getElementById('positions-scroll');
+      if(!sc) return;
+      try{ sc.scrollLeft = 0; }catch(_){ }
     }
     function renderOrders(){
       var body=document.querySelector("#orders-table tbody"); body.innerHTML="";
