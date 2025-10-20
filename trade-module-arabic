@@ -214,7 +214,7 @@
         <div class="accordion-body" data-accordion-panel>
           <div class="table-scroll" id="positions-scroll" dir="rtl">
             <table class="table" id="positions-table">
-              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th><th>تنقية</th><th>التوافق الشرعي</th></tr></thead>
+              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>التوافق الشرعي</th><th>تنقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -397,11 +397,11 @@
           tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
           tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
           var profit = toValidNumber(p.unrealized_pl);
-          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
-          var purifyCell = createPurifyCell(sym, profit);
-          tr.appendChild(purifyCell);
           var shariaInfo = createShariaCell();
           tr.appendChild(shariaInfo.cell);
+          var purifyCell = createPurifyCell(sym, profit);
+          tr.appendChild(purifyCell);
+          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
           var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
           var task = getSharia(p.symbol).then(function(res){
@@ -460,13 +460,19 @@
     function createPurifyCell(sym, profit){
       var cell = document.createElement('td');
       cell.setAttribute('data-label','تنقية');
-      var pill = document.createElement('span'); pill.className='sharia-pill';
-      var dot = document.createElement('span'); dot.className='dot';
-      var label = document.createElement('span'); label.textContent='تنقية';
-      pill.appendChild(dot); pill.appendChild(label);
-      pill.title = 'إرسال إلى سجل التنقية';
-      pill.onclick = function(){ handoffPurification(sym, profit); };
-      cell.appendChild(pill);
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'تنقية';
+      // Text-only button styling
+      btn.style.background = 'none';
+      btn.style.border = 'none';
+      btn.style.padding = '0';
+      btn.style.color = 'var(--accent)';
+      btn.style.fontWeight = '700';
+      btn.style.cursor = 'pointer';
+      btn.title = 'إرسال إلى سجل التنقية';
+      btn.onclick = function(){ handoffPurification(sym, profit); };
+      cell.appendChild(btn);
       return cell;
     }
     function snapPositionsScrollRight(){
