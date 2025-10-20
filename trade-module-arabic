@@ -14,6 +14,7 @@
     .brand .title{font-weight:700;font-size:20px;letter-spacing:.2px;color:var(--text)}
     .status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--text)}
+    .sharia-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
     .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 
     .grid{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;align-content:flex-start;}
@@ -82,6 +83,8 @@
     .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
     #orders-table th:first-child,#orders-table td:first-child{min-width:150px;direction:ltr;font-variant-numeric:tabular-nums;text-align:left}
+    #orders-table th:nth-child(2),#orders-table td:nth-child(2){min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #orders-table th:nth-child(2),#orders-table td:nth-child(2){padding-left:12px;padding-right:12px;}
 
     .card-total-summary{display:flex;flex-direction:column;gap:12px;overflow:hidden}
     .card-total-summary .summary-header{display:flex;align-items:center;gap:10px;background:#7a7a7a;color:#fff;border-radius:calc(var(--radius) - 2px);padding:12px 18px;margin:-18px -18px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
@@ -120,7 +123,7 @@
     @keyframes flash{ 0%{box-shadow:0 0 0 0 rgba(252,100,129,.0)} 30%{box-shadow:0 0 0 6px rgba(252,100,129,.25)} 100%{box-shadow:0 0 0 0 rgba(252,100,129,.0)} }
   </style>
 
-  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Work Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 
   <div class="container">
     <div class="header">
@@ -210,7 +213,7 @@
         <div class="accordion-body" data-accordion-panel>
           <div class="table-scroll">
             <table class="table" id="positions-table">
-              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
+              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>التوافق الشرعي</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -249,6 +252,7 @@
     // ---- Sharia compliance wiring (client) ----
     var SHARIA_URL = ORIGIN + '/wp-json/aiaas/v1/sharia-check';
     var shariaCache = Object.create(null);
+    var purificationRelay = Object.create(null);
 
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
@@ -340,21 +344,56 @@
       return getPositions().then(function(list){
         var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          purificationRelay = Object.create(null);
           lastPhysicalTotal = 0; updateTotalSummary(); return;
         }
+        var tasks=[];
+        var activeSymbols = Object.create(null);
         list.forEach(function(p){
           var tr=document.createElement("tr");
+          var sym = (p.symbol||"").toUpperCase();
+          if(sym){ activeSymbols[sym]=true; }
           tr.appendChild(td("الرمز",p.symbol));
           tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
           tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
+          var shariaInfo = createShariaCell();
+          tr.appendChild(shariaInfo.cell);
           tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
           var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
+          var profit = toValidNumber(p.unrealized_pl);
+          var task = getSharia(p.symbol).then(function(res){
+            var status = (res && res.status) || 'unknown';
+            if(status === 'halal'){
+              setPill(shariaInfo.pill,'متوافق (حلال)','var(--accent)');
+              clearPurificationFlag(sym);
+            } else if(status === 'review' || status === 'mixed'){
+              setPill(shariaInfo.pill,'مراجعة مطلوبة','#f59e0b');
+              clearPurificationFlag(sym);
+            } else if(status === 'haram' || status === 'non-compliant' || status === 'non_compliant'){
+              setPill(shariaInfo.pill,'غير متوافق','#ef4444');
+              if(profit!=null && profit>0){
+                var ratio = extractNonCompliantRatio(res);
+                relayPurification(sym, profit, ratio);
+              } else {
+                clearPurificationFlag(sym);
+              }
+            } else {
+              setPill(shariaInfo.pill,'غير معروف','#9aa3ab');
+              clearPurificationFlag(sym);
+            }
+          }).catch(function(){
+            setPill(shariaInfo.pill,'غير معروف','#9aa3ab');
+            clearPurificationFlag(sym);
+          });
+          tasks.push(task);
         });
+        Object.keys(purificationRelay).forEach(function(key){ if(!activeSymbols[key]){ delete purificationRelay[key]; } });
         lastPhysicalTotal = total; updateTotalSummary();
+        return Promise.all(tasks);
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
         lastPhysicalTotal = null; updateTotalSummary();
       });
     }
@@ -366,7 +405,7 @@
         }
         list.forEach(function(o){
           var tr=document.createElement("tr");
-          var when=new Date(o.submitted_at || o.created_at || Date.now()).toLocaleString();
+          var when=new Date(o.submitted_at || o.created_at || Date.now()).toLocaleDateString();
           tr.appendChild(td("الوقت",when));
           tr.appendChild(td("الرمز",o.symbol));
           tr.appendChild(td("النوع",o.side));
@@ -443,6 +482,43 @@
       var label = pill.lastChild;
       dot.style.background = color || '#9aa3ab';
       label.textContent = stateText;
+    }
+    function createShariaCell(){
+      var cell = document.createElement('td');
+      cell.setAttribute('data-label','التوافق الشرعي');
+      var pill = document.createElement('span');
+      pill.className = 'sharia-pill';
+      var dot = document.createElement('span');
+      dot.className = 'dot';
+      var label = document.createElement('span');
+      pill.appendChild(dot);
+      pill.appendChild(label);
+      cell.appendChild(pill);
+      setPill(pill,'—','#9aa3ab');
+      return { cell: cell, pill: pill };
+    }
+    function extractNonCompliantRatio(res){
+      if(res && res.ratios){
+        if(res.ratios.non_compliant_revenue_pct != null){ return res.ratios.non_compliant_revenue_pct; }
+        if(res.ratios.non_compliant_income_pct != null){ return res.ratios.non_compliant_income_pct; }
+      }
+      return null;
+    }
+    function clearPurificationFlag(symbol){
+      var key = (symbol||'').toUpperCase();
+      if(key){ delete purificationRelay[key]; }
+    }
+    function relayPurification(symbol, profit, ratio){
+      if(typeof window === 'undefined') return;
+      var sym = (symbol||'').toUpperCase();
+      var profitNum = Number(profit);
+      if(!sym || !(profitNum>0)) return;
+      var last = purificationRelay[sym];
+      if(last!=null && Math.abs(last - profitNum) < 0.01) return;
+      purificationRelay[sym] = profitNum;
+      var detail = { symbol: sym, profit: profitNum };
+      if(ratio!=null && isFinite(ratio)){ detail.nonCompliantPct = Number(ratio); }
+      window.dispatchEvent(new CustomEvent('tamror:purification:add', { detail: detail }));
     }
     function getSharia(symbol){
       var s = (symbol||'').toUpperCase();
