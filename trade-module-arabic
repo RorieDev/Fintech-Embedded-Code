@@ -83,6 +83,10 @@
     .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
     .table .sharia-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
+    /* Positions column widths */
+    #positions-table th.col-symbol, #positions-table td.col-symbol{min-width:72px;width:72px}
+    #positions-table th.col-purify, #positions-table td.col-purify{width:84px}
+    #positions-table td.col-purify{text-align:center}
     #orders-table th:first-child,#orders-table td:first-child{min-width:150px;direction:ltr;font-variant-numeric:tabular-nums;text-align:left}
     #orders-table th:nth-child(2),#orders-table td:nth-child(2){min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     #orders-table th:nth-child(2),#orders-table td:nth-child(2){padding-left:12px;padding-right:12px;}
@@ -214,7 +218,16 @@
         <div class="accordion-body" data-accordion-panel>
           <div class="table-scroll" id="positions-scroll" dir="rtl">
             <table class="table" id="positions-table">
-              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>التوافق الشرعي</th><th>تنقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
+              <thead>
+                <tr>
+                  <th class="col-pl">الربح/الخسارة غير المحققة</th>
+                  <th class="col-purify">تنقية</th>
+                  <th class="col-sharia">التوافق الشرعي</th>
+                  <th>القيمة السوقية</th>
+                  <th>متوسط السعر</th>
+                  <th class="col-symbol">الرمز</th>
+                </tr>
+              </thead>
               <tbody></tbody>
             </table>
           </div>
@@ -393,15 +406,24 @@
           var tr=document.createElement("tr");
           var sym = (p.symbol||"").toUpperCase();
           if(sym){ activeSymbols[sym]=true; }
-          tr.appendChild(td("الرمز",p.symbol));
-          tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
-          tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
           var profit = toValidNumber(p.unrealized_pl);
-          var shariaInfo = createShariaCell();
-          tr.appendChild(shariaInfo.cell);
+          // 1) P/L amount (rightmost in RTL)
+          var plCell = td("الربح/الخسارة غير المحققة", fmtCurrency(p.unrealized_pl));
+          plCell.className = 'col-pl';
+          tr.appendChild(plCell);
+          // 2) Purify button
           var purifyCell = createPurifyCell(sym, profit);
           tr.appendChild(purifyCell);
-          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
+          // 3) Sharia pill
+          var shariaInfo = createShariaCell();
+          shariaInfo.cell.className = 'col-sharia';
+          tr.appendChild(shariaInfo.cell);
+          // Remaining columns
+          tr.appendChild(td("القيمة السوقية", fmtCurrency(p.market_value)));
+          tr.appendChild(td("متوسط السعر", fmtCurrency(p.avg_entry_price)));
+          var symCell = td("الرمز", p.symbol);
+          symCell.className = 'col-symbol';
+          tr.appendChild(symCell);
           body.appendChild(tr);
           var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
           var task = getSharia(p.symbol).then(function(res){
@@ -460,17 +482,21 @@
     function createPurifyCell(sym, profit){
       var cell = document.createElement('td');
       cell.setAttribute('data-label','تنقية');
+      cell.className = 'col-purify';
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = 'تنقية';
-      // Text-only button styling
-      btn.style.background = 'none';
+      // Rounded pink button styling per spec
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#fff';
       btn.style.border = 'none';
-      btn.style.padding = '0';
-      btn.style.color = 'var(--accent)';
+      btn.style.padding = '6px 12px';
+      btn.style.borderRadius = '999px';
       btn.style.fontWeight = '700';
       btn.style.cursor = 'pointer';
       btn.title = 'إرسال إلى سجل التنقية';
+      btn.onmouseenter = function(){ btn.style.background = 'var(--accent-600)'; };
+      btn.onmouseleave = function(){ btn.style.background = 'var(--accent)'; };
       btn.onclick = function(){ handoffPurification(sym, profit); };
       cell.appendChild(btn);
       return cell;
