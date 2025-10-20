@@ -88,9 +88,9 @@
     /* Allow long Arabic headers to wrap instead of overflowing into next column */
     #positions-table thead th{ white-space:normal; overflow-wrap:anywhere; word-break:break-word; line-height:1.25 }
     #positions-table th.col-symbol, #positions-table td.col-symbol{min-width:72px;width:72px}
-    /* Halve Purify column width (84px -> 42px). Actual width may expand to content. */
-    #positions-table th.col-purify, #positions-table td.col-purify{width:42px}
-    #positions-table td.col-purify{text-align:right}
+    /* Widen Purify column (42px -> 63px) and center its contents */
+    #positions-table th.col-purify, #positions-table td.col-purify{width:63px;text-align:center}
+    #positions-table td.col-purify .btn{display:inline-flex;align-items:center;justify-content:center}
     /* Constrain P/L column narrower (approx 50% of prior layout) */
     #positions-table th.col-pl, #positions-table td.col-pl{width:96px}
     #orders-table th:first-child,#orders-table td:first-child{min-width:150px;direction:ltr;font-variant-numeric:tabular-nums;text-align:left}
@@ -123,6 +123,7 @@
       .table td:last-child{border-bottom:1px solid var(--border)}
       .table td>*{max-width:none}
       .table td::before{content:none}
+      #positions-scroll{margin-right:0;margin-inline-start:0}
     }
 
     .notice{display:none;margin-bottom:14px;border-radius:12px;padding:12px 14px;border:1px solid #fde68a;background:#fffbeb;color:#92400e}
