@@ -1,400 +1,650 @@
-<!-- TamRor · Arabic Market Showcase (Ticker + Heatmap + Hero) · Mobile-safe scroll-to-trade, steady slide height, fonts fix) -->
-<div id="tamror-market-extras">
+<!-- TamRor × Arabic Alpaca Paper Trading · Single-file with Sharia Check -->
+<div id="tamror-alpaca" class="tamror-root">
   <style>
     :root{
-      --bg:#ffffff; --text:#7A7A7A; --muted:#9aa3ab; --accent:#FC6481; --accent-600:#e55773;
-      --border:#e7edf4; --surface:#ffffff; --surface-2:#f6f8fb; --shadow:0 6px 24px rgba(16,24,40,.06);
-      --bad:#ef4444; --ok:#16a34a; --control-h:44px;
+      --bg:#ffffff; --text:#7A7A7A; --muted:#9aa3ab; --surface:#ffffff; --surface-2:#f5f7fa;
+      --accent:#FC6481; --accent-600:#e55773; --border:#e7edf4; --shadow:0 6px 24px rgba(16,24,40,.06);
+      --radius:16px; --control-h:44px;
     }
-    #tamror-market-extras{background:var(--bg);color:var(--text);font-family:"Work Sans",system-ui,-apple-system,Segoe UI,Roboto,Arial}
-    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    .tamror-root{background:var(--bg); color:var(--text); font-family:"Work Sans", sans-serif; font-weight:400;}
+    .tamror-root *{font-family:"Work Sans", sans-serif; font-weight:400;}
+    .tamror-root b, .tamror-root strong{font-weight:600;}
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+    .header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .brand .title{font-weight:700;font-size:20px;letter-spacing:.2px;color:var(--text)}
+    .status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--text)}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 
-    /* Ticker */
-    .ticker-shell{position:relative; overflow:hidden; height:58px; border:1px solid var(--border); border-radius:14px; background:var(--surface); box-shadow:var(--shadow)}
-    .lane{position:absolute; top:0; bottom:0; left:0; display:flex; align-items:center; gap:28px; white-space:nowrap; padding:12px 16px}
-    .laneA{animation:slideA 35s linear infinite}
-    .laneB{animation:slideB 35s linear infinite}
-    @keyframes slideA{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
-    @keyframes slideB{ from{ transform:translateX(100%) } to{ transform:translateX(0) } }
-    .tick{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border)}
-    .tick-symbol{font-weight:800;color:#333;padding-bottom:2px}
-    .tick-price{font-weight:700}
-    .up{color:var(--ok)} .down{color:var(--bad)}
+    .grid{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;align-content:flex-start;}
+    .grid>.card{align-self:stretch;flex:1 1 100%;min-width:0;display:flex;flex-direction:column;}
+    .span-4{flex:1 1 280px; max-width:calc(33.333% - 8px)}
+    .span-6{flex:1 1 360px; max-width:calc(50% - 8px)}
+    .span-8{flex:1 1 480px; max-width:calc(66.666% - 8px)}
+    .span-12{flex-basis:100%; max-width:100%}
+    @media (max-width:900px){ .span-4,.span-6,.span-8,.span-12{flex:1 1 100%;max-width:100%;} }
 
-    /* Cards / Head */
-    .card{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:14px}
-    .head{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .title{font-weight:800;color:#333}
-    .chg-neg{color:var(--bad);font-weight:700}
-    .chg-pos{color:var(--ok);font-weight:700}
+    .card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .h2{font-size:16px;font-weight:700;margin:0 0 10px 0;color:#333}
 
-    /* Heatmap */
-    .heat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-    @media (max-width:900px){ .heat-grid{grid-template-columns:repeat(3,1fr)} }
-    @media (max-width:640px){ .heat-grid{grid-template-columns:repeat(2,1fr)} }
-    .heat-tile{position:relative;border-radius:16px;border:1px solid var(--border);padding:10px 12px;overflow:hidden;background:linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.02) 100%)}
-    .heat-head{display:flex;justify-content:space-between;align-items:center}
-    .heat-sym{font-weight:800;color:#333}
-    .heat-delta{font-weight:800}
-    .heat-spark{height:42px;margin-top:6px}
-    .glow{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 2px rgba(0,0,0,0)}
+    /* Accordion (hover/active pink) */
+    .accordion{padding:0;overflow:hidden}
+    .accordion + .accordion{margin-top:0}
+    .accordion-toggle{width:100%;display:flex;align-items:center;gap:12px;background:none;border:none;padding:18px;font-size:15px;color:#333;cursor:pointer;text-align:left;border-radius:calc(var(--radius) - 2px);transition:background .18s ease,color .18s ease;}
+    .accordion-toggle:focus{outline:2px solid rgba(252,100,129,.40);outline-offset:-4px}
+    .accordion-toggle:hover{background:rgba(252,100,129,.06); color:var(--accent)}
+    .accordion-toggle:hover .chevron{color:var(--accent)}
+    .accordion[data-open="true"] .accordion-toggle{background:rgba(252,100,129,.08); color:var(--accent)}
+    .accordion-toggle .label{font-size:15px;color:inherit;margin:0}
+    .accordion-body{padding:0 18px 18px 18px;border-top:1px solid var(--border);flex:1;display:flex;flex-direction:column;}
+    .accordion[data-open="false"] .accordion-body{display:none}
+    .chevron{transition:transform .26s ease,color .18s ease;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;color:var(--muted)}
+    .chevron svg{display:block;width:22px;height:22px}
+    .accordion[data-open="false"] .chevron{transform:rotate(90deg); color:var(--accent)}
+    .card-account .accordion-body .btn-secondary,
+    .card-positions .accordion-body .btn-secondary{margin-top:auto;}
+    .card-account .accordion-toggle{background:#7A7A7A;color:#fff;}
+    .card-account .accordion-toggle:hover{background:#6a6a6a;color:#fff;}
+    .card-account.accordion[data-open="false"] .accordion-toggle{background:#7A7A7A;color:#fff;}
+    .card-account .accordion-toggle .chevron{color:#fff;}
+    .card-account .accordion-toggle:hover .chevron{color:#fff;}
+    .card-account.accordion[data-open="true"] .chevron{color:#fff;}
+    @media (max-width:640px){ .accordion-toggle{padding:16px} .accordion-body{padding:0 16px 16px 16px} }
 
-    /* Hero Carousel */
-    .hero{position:relative;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#fff, #f9fbff)}
-    .hero-slide{display:none;align-items:center;gap:16px;padding:18px}
-    .hero-slide.active{display:flex;animation:fadeIn .5s ease}
-    @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
-    .hero-left{flex:1 1 40%}
-    .hero-right{flex:1 1 60%}
-    .hero-price{font-size:34px;font-weight:800;color:#333}
-    .hero-delta{font-size:18px;font-weight:800;margin-left:10px}
-    .hero-chart{width:100%;height:160px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 240px}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+    .input, select{width:100%;background:#fff;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:15px;outline:none;box-sizing:border-box}
+    .input:focus, select:focus{box-shadow:0 0 0 3px rgba(252,100,129,.15); border-color:var(--accent)}
 
-    /* CTA: keep height steady across slides (avoid mobile judder) */
-    .hero-cta{margin-top:10px; display:flex; gap:10px; flex-wrap:wrap; min-height:var(--control-h)}
-    .btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(252,100,129,.35); min-height:var(--control-h)}
-    .btn:hover{background:var(--accent-600)}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(252,100,129,.35);min-height:var(--control-h);}
+    .btn:hover{background:var(--accent-600)} .btn:disabled{opacity:.5;cursor:not-allowed}
     .btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border);box-shadow:none}
-    .btn.ghost{visibility:hidden; pointer-events:none} /* reserves space when Sell is absent */
 
-    .progress{position:absolute;left:0;top:0;height:4px;background:var(--accent);width:0;transition:width .2s linear}
-    .hero-nav{position:absolute;right:10px;bottom:10px;display:flex;gap:6px}
-    .dot{width:8px;height:8px;border-radius:50%;background:#dbe2ea}
-    .dot.active{background:var(--accent)}
+    .actions-col{display:flex;align-items:flex-end;justify-content:center}
+    #side.select-tall{-webkit-appearance:none;appearance:none;min-height:var(--control-h);padding:10px 36px 10px 12px;line-height:1.2;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 6 5-6' stroke='%237A7A7A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat:no-repeat; background-position:right 12px center; background-size:14px;}
+    #side, #side option{font-family:"Work Sans", sans-serif; text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased; direction:ltr;}
 
-    .status{margin-top:10px;font-size:12px;color:#555;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px}
-    .status b{color:#333} .ok{color:#16a34a;font-weight:800} .err{color:#ef4444;font-weight:800}
+    .kpi{font-size:22px;font-weight:400;color:#333} .kpi-label{font-size:12px;color:var(--muted);margin-top:2px}
+    .kpi-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+    .kpi-item{display:flex;flex-direction:column;gap:4px}
+    @media(max-width:640px){.kpi-row{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}}
+
+    .table-scroll{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+    .table-scroll::-webkit-scrollbar{height:6px}
+    .table-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.16);border-radius:999px}
+    .table-scroll::-webkit-scrollbar-track{background:rgba(0,0,0,.04)}
+
+    .table{width:100%;border-collapse:separate;border-spacing:0 10px}
+    .table th{font-size:12px;text-align:left;color:#555;font-weight:700;padding:0 10px;white-space:nowrap}
+    .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
+    .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
+    #orders-table th:first-child,#orders-table td:first-child{min-width:150px;direction:ltr;font-variant-numeric:tabular-nums;text-align:left}
+    #orders-table th:nth-child(2),#orders-table td:nth-child(2){min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #orders-table th:nth-child(2),#orders-table td:nth-child(2){padding-left:12px;padding-right:12px;}
+
+    .card-total-summary{display:flex;flex-direction:column;gap:12px;overflow:hidden}
+    .card-total-summary .summary-header{display:flex;align-items:center;gap:10px;background:#7a7a7a;color:#fff;border-radius:calc(var(--radius) - 2px);padding:12px 18px;margin:-18px -18px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+    .card-total-summary .summary-chevron{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:rgba(255,255,255,.16);color:inherit}
+    .card-total-summary .summary-chevron svg{width:12px;height:12px}
+    .card-total-summary .summary-title{font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:inherit}
+    .card-total-summary .summary-note{font-size:12px;color:var(--muted)}
+    .total-summary{width:100%;border-collapse:collapse}
+    .total-summary td{padding:10px 14px;border:1px solid var(--border);background:#fff}
+    .total-summary td.label{font-weight:500;color:#555}
+    .total-summary td.value{text-align:right;font-variant-numeric:tabular-nums;font-weight:400;color:#333}
+    .total-summary .total-row td{background:var(--surface-2);font-weight:500}
+    @media (max-width:680px){
+      .total-summary tr{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:10px}
+      .total-summary td{border:none;border-bottom:1px solid var(--border)}
+      .total-summary td:last-child{border-bottom:none}
+      .total-summary td.value{text-align:left}
+    }
+    @media (max-width:640px){
+      .table-scroll{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px;padding-bottom:12px}
+      .table{min-width:600px;border-spacing:0 8px}
+      .table thead{display:table-header-group}
+      .table tr{display:table-row;border-radius:0}
+      .table td{display:table-cell;justify-content:initial;gap:0;border-bottom:1px solid var(--border);white-space:nowrap}
+      .table td:last-child{border-bottom:1px solid var(--border)}
+      .table td>*{max-width:none}
+      .table td::before{content:none}
+    }
+
+    .notice{display:none;margin-bottom:14px;border-radius:12px;padding:12px 14px;border:1px solid #fde68a;background:#fffbeb;color:#92400e}
+    .notice.show{display:block}
+    .helper{margin-top:8px;font-size:13px;color:var(--muted)}
+    .order-result{margin-top:10px;color:#555}
+
+    .flash{animation:flash 1.1s ease}
+    @keyframes flash{ 0%{box-shadow:0 0 0 0 rgba(252,100,129,.0)} 30%{box-shadow:0 0 0 6px rgba(252,100,129,.25)} 100%{box-shadow:0 0 0 0 rgba(252,100,129,.0)} }
   </style>
 
-  <!-- Fix “Named entity expected got none” by escaping & as &amp; and keeping on a single line -->
-  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 
-  <div class="wrap">
-    <!-- Ticker -->
-    <div class="ticker-shell" aria-label="شريط السوق">
-      <div id="laneA" class="lane laneA"></div>
-      <div id="laneB" class="lane laneB"></div>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="title">TamRor · التداول التجريبي</div>
+        <div style="color:var(--muted);font-size:13px">بيئة Alpaca التجريبية · إثبات مفهوم</div>
+      </div>
+      <div class="status">
+        <span class="pill"><span class="dot" id="conn-dot"></span> <span id="conn-text">جارٍ التحقق من الوكيل…</span></span>
+        <span class="pill">البيئة: تجريبية</span>
+      </div>
     </div>
 
-    <!-- Heatmap -->
-    <div class="card">
-      <div class="head"><div class="title">خريطة الأداء الحرارية</div></div>
-      <div id="heatGrid" class="heat-grid"></div>
+    <div id="proxy-note" class="notice">
+      <b>إجراء مطلوب:</b> قم بإعداد وكيل الخادم عند <code id="proxy-url-label"></code>. لا تفصح مطلقًا عن مفاتيح الـAPI في المتصفح.
     </div>
 
-    <!-- Hero Carousel -->
-    <div class="card hero" id="heroCard">
-      <div id="heroProgress" class="progress"></div>
-      <div id="heroSlides"></div>
-      <div id="heroNav" class="hero-nav"></div>
+    <div class="grid">
+      <!-- Order ticket -->
+      <div class="card span-12" id="placeCard">
+        <div class="h2">تنفيذ أمر</div>
+        <div class="row">
+          <div class="col">
+            <label class="label">الرمز</label>
+            <div class="ac-wrap" style="position:relative">
+              <input class="input" id="symbol" placeholder="AAPL / TSLA / NVDA" autocomplete="off"/>
+              <div id="ac-list" style="position:absolute;z-index:20;left:0;right:0;top:100%;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);max-height:260px;overflow:auto;display:none"></div>
+            </div>
+          </div>
+          <div class="col">
+            <label class="label">نوع الصفقة</label>
+            <select class="input select-tall" id="side">
+              <option value="buy">شراء</option>
+              <option value="sell">بيع</option>
+            </select>
+          </div>
+          <div class="col">
+            <label class="label">الكمية</label>
+            <input class="input" id="qty" type="number" min="1" step="1" value="1" />
+          </div>
+          <div class="col actions-col">
+            <button class="btn" id="placeOrder" type="button">إرسال أمر سوقي</button>
+          </div>
+        </div>
+        <div class="helper">النوع: <b>market</b> · مدة التنفيذ: <b>day</b> · افصل بين عدة رموز باستخدام <b>/</b> أو <b>,</b> أو مسافات.</div>
+        <div id="order-result" class="order-result"></div>
+      </div>
+
+      <!-- Account -->
+      <div class="card span-12 accordion card-account" data-open="true">
+        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
+          <span class="label">الحساب</span>
+        </button>
+        <div class="accordion-body" data-accordion-panel>
+          <div class="kpi-row">
+            <div class="kpi-item"><div class="kpi" id="acct-equity">$—</div><div class="kpi-label">حقوق الملكية</div></div>
+            <div class="kpi-item"><div class="kpi" id="acct-cash">$—</div><div class="kpi-label">النقد</div></div>
+            <div class="kpi-item"><div class="kpi" id="acct-ptv">$—</div><div class="kpi-label">قيمة المحفظة</div></div>
+          </div>
+          <button class="btn btn-secondary" id="refreshAccount" type="button">تحديث</button>
+        </div>
+      </div>
+
+      <!-- Total Portfolio Summary -->
+      <div class="card span-12 card-total-summary" id="totalSummaryCard">
+        <div class="summary-header">
+          <span class="summary-chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
+          <div class="summary-title">إجمالي قيمة المحفظة</div>
+        </div>
+        <table class="total-summary" aria-live="polite">
+          <tbody>
+            <tr><td class="label">قيمة محفظة الحساب</td><td class="value" id="tp-account">$—</td></tr>
+            <tr><td class="label">إجمالي الأصول المادية</td><td class="value" id="tp-physical">$—</td></tr>
+            <tr class="total-row"><td class="label">الإجمالي الموحّد</td><td class="value" id="tp-total">$—</td></tr>
+          </tbody>
+        </table>
+        <div class="summary-note">مجموع قيمة محفظة الحساب وإجمالي قيمة الأصول المادية.</div>
+      </div>
+
+      <!-- Positions -->
+      <div class="card span-12 accordion card-positions" data-open="false">
+        <button class="accordion-toggle" type="button" aria-expanded="true" data-accordion-button>
+          <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
+          <span class="label">المراكز المفتوحة</span>
+        </button>
+        <div class="accordion-body" data-accordion-panel>
+          <div class="table-scroll">
+            <table class="table" id="positions-table">
+              <thead><tr><th>الرمز</th><th>الكمية</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <button class="btn btn-secondary" id="refreshPositions" type="button">تحديث</button>
+        </div>
+      </div>
+
+      <!-- Orders -->
+      <div class="card span-12 accordion" data-open="false">
+        <button class="accordion-toggle" type="button" aria-expanded="false" data-accordion-button>
+          <span class="chevron" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l6 5-6 5"/></svg></span>
+          <span class="label">الطلبات الأخيرة</span>
+        </button>
+        <div class="accordion-body" data-accordion-panel>
+          <div class="table-scroll">
+            <table class="table" id="orders-table">
+              <thead><tr><th>الوقت</th><th>الرمز</th><th>النوع</th><th>الكمية</th><th>الحالة</th><th>إجراء</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <button class="btn btn-secondary" id="refreshOrders" type="button">تحديث</button>
+        </div>
+      </div>
     </div>
 
-    <div class="status">
-      <div><b>شريط الأسعار:</b> <span id="tickStatus">جارٍ الانتظار…</span> · <b>البيانات:</b> Alpaca IEX · <b>الخادم الوسيط:</b> <span id="proxyBase">/wp-json/alpaca/v1</span></div>
+    <div class="helper" style="margin-top:12px">
+      الوكيل يوجّه إلى <code>https://paper-api.alpaca.markets/v2/*</code>.
     </div>
   </div>
 
   <script>
-    /* ===== Config ===== */
-    const PROXY_BASE = "/wp-json/alpaca/v1";
-    const DEFAULT_WATCH = ["AAPL","TSLA","NVDA","GOOG","META","ORCL"]; // 6 symbols
-    const TICKER_REFRESH_MS = 30000;
-    const HERO_ROTATE_MS = 6000;
-    const POSITIONS_REFRESH_MS = 30000;
-    const HEADER_OFFSET = 88; // keep Place Order card fully visible under sticky headers
+  (function(){
+    var ORIGIN    = window.location.origin || (window.location.protocol + "//" + window.location.host);
+    var PROXY_URL = ORIGIN + "/wp-json/alpaca/v1";
 
-    /* ===== Helpers ===== */
-    const $ = (id)=>document.getElementById(id);
-    const fmt = (n,d=2)=> (n==null||isNaN(+n) ? "—" : (+n).toFixed(d));
-    const isoDaysAgo = (n)=> new Date(Date.now() - n*24*3600*1000).toISOString();
-    $("proxyBase").textContent = PROXY_BASE;
+    // ---- Sharia compliance wiring (client) ----
+    var SHARIA_URL = ORIGIN + '/wp-json/aiaas/v1/sharia-check';
+    var shariaCache = Object.create(null);
 
-    async function api(path, q={}){
-      const qs = Object.entries(q).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
-      const url = `${PROXY_BASE}${path}${qs?("?"+qs):""}`;
-      const r = await fetch(url, {cache:"no-store"}); const txt = await r.text();
-      if(!r.ok){ throw new Error(txt || r.statusText); }
-      try { return JSON.parse(txt); } catch { return txt; }
+    function $(id){ return document.getElementById(id); }
+    function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
+    var lastAccountPortfolio = null;
+    var lastPhysicalTotal = null;
+    function toValidNumber(n){ var num = Number(n); return isFinite(num) ? num : null; }
+    function updateTotalSummary(){
+      var accountEl = $("tp-account"), physicalEl = $("tp-physical"), totalEl = $("tp-total");
+      if(!accountEl || !physicalEl || !totalEl){ return; }
+      var accountVal = toValidNumber(lastAccountPortfolio);
+      var physicalVal = toValidNumber(lastPhysicalTotal);
+      accountEl.textContent = fmtCurrency(accountVal);
+      physicalEl.textContent = fmtCurrency(physicalVal);
+      totalEl.textContent = (accountVal==null || physicalVal==null) ? "—" : fmtCurrency(accountVal + physicalVal);
     }
-    const getSnapshot = (symbol)=> api(`/market/snapshot/${encodeURIComponent(symbol)}`);
-    const getPositions = ()=> api(`/positions`);
+    function toSymbols(input){
+      var seen = {};
+      return (input || "")
+        .toUpperCase()
+        .split(/[\s,\/]+/)
+        .map(function(part){ return part.replace(/[^A-Z0-9.\-]/g,""); })
+        .filter(function(part){ if(!part || seen[part]) return false; seen[part]=true; return true; });
+    }
+    function debounce(fn,ms){ var t; return function(){ var a=arguments,ctx=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(ctx,a); }, ms); }; }
 
-    function getBars(symbol, timeframe){
-      const isDaily = timeframe==="1Day";
-      return api(`/market/bars/${encodeURIComponent(symbol)}`, {
-        timeframe, feed:"iex", adjustment:"split",
-        limit: isDaily ? 365 : 600,
-        start: isDaily ? isoDaysAgo(420) : isoDaysAgo(7)
+    function api(path, options){
+      options = options || {};
+      var method = (options.method || "GET").toUpperCase();
+      var url = PROXY_URL + path;
+      if(method === "GET"){ url += (path.indexOf("?")>-1 ? "&" : "?") + "_ts=" + Date.now(); }
+      var headers = {"Content-Type":"application/json"};
+      if (options.headers){ for (var k in options.headers){ if(Object.prototype.hasOwnProperty.call(options.headers,k)){ headers[k]=options.headers[k]; } } }
+      var fetchOpts = { method: method, headers: headers, cache: "no-store" };
+      if (options.body){ fetchOpts.body = options.body; }
+      return fetch(url, fetchOpts).then(function(res){
+        if(!res.ok){ return res.text().then(function(t){ throw new Error("HTTP "+res.status+": "+t); }); }
+        var ct = res.headers.get("content-type") || "";
+        if (ct.indexOf("application/json")>-1){ return res.json(); }
+        return res.text();
       });
     }
-    async function fetchSnapshots(symbols){
-      const out = [];
-      await Promise.all(symbols.map(async s=>{
-        try{
-          const snap = await getSnapshot(s);
-          const last  = snap?.latestTrade?.p ?? snap?.minuteBar?.c ?? null;
-          const prevc = snap?.prevDailyBar?.c ?? snap?.dailyBar?.o ?? null;
-          const delta = (last!=null && prevc!=null) ? (last-prevc) : null;
-          const pc    = (last!=null && prevc!=null) ? ((delta/prevc)*100) : null;
-          out.push({s,last,delta,pc});
-        }catch(e){}
-      }));
-      return out.filter(r=>r.last!=null && r.pc!=null);
+
+    function checkProxy(){
+      var labelEl = $("proxy-url-label"); if (labelEl) labelEl.textContent = PROXY_URL;
+      var finished = false;
+      var watchdog = setTimeout(function(){
+        if (finished) return;
+        finished = true;
+        $("conn-text").textContent = "انقطع الاتصال (انتهت المهلة)";
+        $("conn-dot").style.background = "#f59e0b";
+        $("proxy-note").classList.add("show");
+      }, 6000);
+      var url = PROXY_URL + "/ping?_ts=" + Date.now();
+      return fetch(url, {cache:"no-store"}).then(function(res){
+        return res.text().then(function(txt){
+          if(!res.ok){ throw new Error("HTTP "+res.status+" "+res.statusText); }
+          try{ var j = JSON.parse(txt); if(!j || j.ok !== true){ throw new Error("Ping not ok:true"); } }catch(e){}
+          if (!finished){ finished = true; clearTimeout(watchdog); $("conn-text").textContent = "متصل"; $("conn-dot").style.background = "var(--accent)"; }
+          return true;
+        });
+      }).catch(function(){
+        if (!finished){ finished = true; clearTimeout(watchdog); $("conn-text").textContent = "غير متصل"; $("conn-dot").style.background = "#f59e0b"; $("proxy-note").classList.add("show"); }
+        return false;
+      });
     }
 
-    /* ===== Holdings cache (for Buy/Sell CTA) ===== */
-    let HELD = new Set(); // upper-case symbols with qty > 0
-    async function refreshHeld(){
-      try{
-        const list = await getPositions();
-        HELD = new Set(
-          (Array.isArray(list)?list:[])
-            .filter(p=> Number(p.qty) > 0 )
-            .map(p=> String(p.symbol||"").toUpperCase())
-        );
-      }catch(e){
-        // keep previous HELD on error
+    function getAccount(){ return api("/account"); }
+    function getPositions(){ return api("/positions"); }
+    function getOrders(){ return api("/orders?status=all&limit=25"); }
+    function postOrder(payload){ return api("/orders",{method:"POST", body: JSON.stringify(payload)}); }
+    function cancelOrder(id){ return api("/orders/"+encodeURIComponent(id), {method:"DELETE"}); }
+
+    function renderAccount(){
+      return getAccount().then(function(a){
+        $("acct-equity").textContent = fmtCurrency(a.equity);
+        $("acct-cash").textContent   = fmtCurrency(a.cash);
+        var portfolio = (a && a.portfolio_value!=null) ? a.portfolio_value : a.equity;
+        $("acct-ptv").textContent    = fmtCurrency(portfolio);
+        lastAccountPortfolio = toValidNumber(portfolio);
+        updateTotalSummary();
+      }).catch(function(){
+        $("acct-equity").textContent = "—"; $("acct-cash").textContent = "—"; $("acct-ptv").textContent = "—";
+        lastAccountPortfolio = null; updateTotalSummary();
+      });
+    }
+    function td(label,value){ var td=document.createElement("td"); td.setAttribute("data-label",label); td.textContent=value; return td; }
+    function renderPositions(){
+      var body=document.querySelector("#positions-table tbody"); body.innerHTML="";
+      return getPositions().then(function(list){
+        var total=0;
+        if(!list || !list.length){
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          lastPhysicalTotal = 0; updateTotalSummary(); return;
+        }
+        list.forEach(function(p){
+          var tr=document.createElement("tr");
+          tr.appendChild(td("الرمز",p.symbol));
+          tr.appendChild(td("الكمية",Number(p.qty).toLocaleString()));
+          tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
+          tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
+          tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
+          body.appendChild(tr);
+          var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
+        });
+        lastPhysicalTotal = total; updateTotalSummary();
+      }).catch(function(){
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        lastPhysicalTotal = null; updateTotalSummary();
+      });
+    }
+    function renderOrders(){
+      var body=document.querySelector("#orders-table tbody"); body.innerHTML="";
+      return getOrders().then(function(list){
+        if(!list || !list.length){
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="لا توجد طلبات حديثة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr); return;
+        }
+        list.forEach(function(o){
+          var tr=document.createElement("tr");
+          var when=new Date(o.submitted_at || o.created_at || Date.now()).toLocaleDateString();
+          tr.appendChild(td("الوقت",when));
+          tr.appendChild(td("الرمز",o.symbol));
+          tr.appendChild(td("النوع",o.side));
+          tr.appendChild(td("الكمية",o.qty));
+          tr.appendChild(td("الحالة",o.status));
+          var act=document.createElement("td"); act.setAttribute("data-label","إجراء");
+          var actions=document.createElement("div"); actions.className="actions";
+          if(!(o.status||"").match(/^canceled/)){
+            var b=document.createElement("button"); b.className="btn btn-secondary"; b.textContent="إلغاء";
+            b.onclick=function(){
+              b.disabled=true;
+              cancelOrder(o.id).then(renderOrders).catch(function(e){ alert("فشل الإلغاء: "+e.message); }).finally(function(){ b.disabled=false; });
+            };
+            actions.appendChild(b);
+          } else {
+            var s=document.createElement("span"); s.style.color="#9aa3ab"; s.textContent="تم الإلغاء"; actions.appendChild(s);
+          }
+          act.appendChild(actions); tr.appendChild(act); body.appendChild(tr);
+        });
+      }).catch(function(){
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=6; t.textContent="فشل تحميل الطلبات."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+      });
+    }
+
+    // ---- Autocomplete & Sharia pill ----
+    var AC_SEED = ["AAPL","TSLA","NVDA","AMZN","GOOG","META","AMD","NFLX","ADBE","CRM","INTC","IBM","SHOP","UBER","SNOW","PANW","COIN","SQ","PYPL","BA","DIS","V","MA","JPM","BAC","WFC","C","ORCL","SAP","NOW","AVGO","QCOM","MU","TXN","ASML","NIO","BABA","PDD","JD","T","VZ"];
+    var acList = $("ac-list"), symInput = $("symbol");
+
+    function acRender(items){
+      acList.innerHTML=""; if(!items.length){ acList.style.display="none"; return; }
+      items.forEach(function(s){
+        var li=document.createElement("div"); li.className="ac-item"; li.textContent=s;
+        li.style.padding="8px 12px"; li.style.cursor="pointer";
+        li.onclick=function(){ symInput.value=s; acList.style.display="none"; updateShariaPillForInput(); };
+        li.onmouseenter=function(){ li.style.background="#7A7A7A"; li.style.color="#fff"; };
+        li.onmouseleave=function(){ li.style.background="#fff"; li.style.color=""; };
+        acList.appendChild(li);
+      });
+      acList.style.display="block";
+    }
+    symInput.addEventListener("input", debounce(function(){
+      var q=(symInput.value||"").toUpperCase(); if(!q){ acList.style.display="none"; return; }
+      var items = AC_SEED.filter(function(s){ return s.indexOf(q)===0; }).slice(0,12);
+      acRender(items);
+    }, 160));
+    symInput.addEventListener("blur", function(){ setTimeout(function(){ acList.style.display="none"; }, 140); });
+    symInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); acList.style.display="none"; $("qty").focus(); } });
+
+    function ensureShariaPill(){
+      var wrap = document.querySelector('.ac-wrap');
+      if(!wrap) return null;
+      var pill = document.getElementById('sharia-pill');
+      if(!pill){
+        pill = document.createElement('div');
+        pill.id = 'sharia-pill';
+        pill.style.marginTop = '6px';
+        pill.style.fontSize = '12px';
+        pill.style.display = 'inline-flex';
+        pill.style.alignItems = 'center';
+        pill.style.gap = '8px';
+        pill.style.padding = '6px 10px';
+        pill.style.border = '1px solid var(--border)';
+        pill.style.borderRadius = '999px';
+        pill.style.background = 'var(--surface-2)';
+        pill.style.color = 'var(--text)';
+        pill.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#9aa3ab;display:inline-block"></span><span>—</span>';
+        wrap.parentNode.appendChild(pill);
       }
+      return pill;
+    }
+    function setPill(pill, stateText, color){
+      if(!pill) return;
+      var dot = pill.firstChild;
+      var label = pill.lastChild;
+      dot.style.background = color || '#9aa3ab';
+      label.textContent = stateText;
+    }
+    function getSharia(symbol){
+      var s = (symbol||'').toUpperCase();
+      if(!s) return Promise.resolve({ status:'unknown' });
+      if (shariaCache[s]) return Promise.resolve(shariaCache[s]);
+      var url = SHARIA_URL + '?symbol=' + encodeURIComponent(s) + '&_ts=' + Date.now();
+      return fetch(url, { cache:'no-store' })
+        .then(function(r){ return r.json(); })
+        .then(function(j){ shariaCache[s] = j; return j; })
+        .catch(function(){ return { status:'unknown' }; });
+    }
+    function updateShariaPillForInput(){
+      var pill = ensureShariaPill();
+      var raw = (document.getElementById('symbol')?.value || '').toUpperCase();
+      var first = raw.split(/[\s,\/]+/).map(function(s){return s.trim();}).filter(Boolean)[0];
+      if(!first){ setPill(pill,'—','#9aa3ab'); return; }
+      setPill(pill,'جارٍ الفحص…','#9aa3ab');
+      getSharia(first).then(function(res){
+        var st = (res && res.status || 'unknown');
+        if(st === 'halal'){
+          setPill(pill,'متوافق (حلال)','var(--accent)');
+        }else if(st === 'review' || st === 'mixed'){
+          setPill(pill,'مراجعة مطلوبة','#f59e0b');
+        }else if(st === 'haram' || st === 'non-compliant'){
+          setPill(pill,'غير متوافق','#ef4444');
+        }else{
+          setPill(pill,'غير معروف','#9aa3ab');
+        }
+      }).catch(function(){ setPill(pill,'غير معروف','#9aa3ab'); });
     }
 
-    /* ===== Ticker ===== */
-    function renderTicks(rows){
-      return rows.map(r=>{
-        const cls = (r.delta||0)>=0 ? "up":"down";
-        return `<span class="tick"><span class="tick-symbol">${r.s}</span><span class="tick-price ${cls}">${fmt(r.last)}</span><span class="${cls}">${(r.delta>=0?"+":"")+fmt(r.delta)}</span><span class="${cls}">${(r.pc>=0?"+":"")+fmt(r.pc)}%</span></span>`;
-      }).join("");
-    }
-    function ensureFill(lane, shell){
-      const base = lane.innerHTML;
-      if(!base) return;
-      let times = Math.ceil(shell.clientWidth / lane.scrollWidth);
-      if(times > 1) lane.innerHTML = Array(times).fill(base).join("");
-    }
-    function restartAnimation(el){
-      if(!el) return;
-      el.style.animation = "none";
-      /* Force reflow so Safari restarts the ticker animation after async content fills in */
-      void el.offsetWidth;
-      el.style.animation = "";
-    }
-    async function loadTicker(symbols){
+    // Smooth focus helpers & deep-link to trade
+    (function(){
+      var placeCard = document.getElementById("placeCard");
+      if (placeCard) placeCard.style.scrollMarginTop = "88px";
+
+      function isIOS(){
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      }
+      function scrollToQtyThenFocus(){
+        var qty = document.getElementById("qty"); if(!qty) return;
+        var y = qty.getBoundingClientRect().top + window.pageYOffset - 120;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        var focusNow = function(){
+          try{
+            qty.focus({ preventScroll: true }); qty.select && qty.select();
+            if (isIOS() && typeof qty.setSelectionRange === "function") {
+              var end = String(qty.value || "1").length; qty.setSelectionRange(end, end);
+            }
+          }catch(_){}
+        };
+        var doFocus = function(){
+          focusNow();
+          if (isIOS() && window.visualViewport) {
+            var once = function(){ focusNow(); window.visualViewport.removeEventListener("resize", once); };
+            window.visualViewport.addEventListener("resize", once, { once:true });
+          } else if (isIOS()) {
+            setTimeout(focusNow, 350);
+          }
+        };
+        if ("onscrollend" in window) {
+          var onEnd = function(){ window.removeEventListener("scrollend", onEnd); doFocus(); };
+          window.addEventListener("scrollend", onEnd);
+        } else {
+          setTimeout(doFocus, 280);
+        }
+      }
+      function flashOrderCard(){
+        var card = document.getElementById("placeCard");
+        if(!card) return; card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
+      }
+      function handleTradeEvent(symbol, side){
+        var symEl = document.getElementById("symbol");
+        var sideEl = document.getElementById("side");
+        if (symEl) symEl.value = (symbol||"").toUpperCase();
+        if (sideEl && sideEl.tagName === "SELECT") sideEl.value = (side||"buy");
+        updateShariaPillForInput();
+        scrollToQtyThenFocus(); flashOrderCard();
+      }
+      window.addEventListener("tamror:trade", function(e){ var d = (e && e.detail) || {}; handleTradeEvent(d.symbol, d.side); });
       try{
-        const rows=await fetchSnapshots(symbols);
-        const mid = Math.ceil(rows.length/2);
-        const aRows = rows.slice(0, mid);
-        const bRows = rows.slice(mid);
+        var url=new URL(window.location.href);
+        var sym=url.searchParams.get("trade");
+        var sd=url.searchParams.get("side")||"buy";
+        if(sym){ setTimeout(function(){ handleTradeEvent(sym, sd); }, 60); }
+      }catch(_){}
+    })();
 
-        const shell = document.querySelector(".ticker-shell");
-        const laneA = $("laneA"), laneB = $("laneB");
+    // ---- Place order with Sharia enforcement ----
+    function onPlace(){
+      var symbols = toSymbols($("symbol").value);
+      var side    = $("side").value;
+      var qty     = parseInt($("qty").value,10);
 
-        laneA.innerHTML = renderTicks(aRows.length ? aRows : rows);
-        laneB.innerHTML = renderTicks(bRows.length ? bRows : rows);
+      if(!symbols.length){ alert("أدخل رمزًا أو أكثر (مثل AAPL)."); return; }
+      if(!(qty>0)){ alert("يجب أن تكون الكمية أكبر من 0."); return; }
 
-        requestAnimationFrame(()=>{
-          ensureFill(laneA, shell);
-          ensureFill(laneB, shell);
-          restartAnimation(laneA);
-          restartAnimation(laneB);
+      var orderBtn = $("placeOrder");
+      var resultEl = $("order-result");
+      orderBtn.disabled = true;
+      resultEl.textContent = "جارٍ فحص التوافق الشرعي…";
+
+      // 1) Sharia check all symbols
+      Promise.all(symbols.map(getSharia)).then(function(resList){
+        var blocked = [], review  = [];
+        resList.forEach(function(res, i){
+          var st = (res && res.status) || 'unknown';
+          if(st === 'haram' || st === 'non-compliant'){ blocked.push(symbols[i]); }
+          else if(st === 'review' || st === 'mixed' || st === 'unknown'){ review.push(symbols[i]); }
         });
 
-        $("tickStatus").textContent="جاهز"; $("tickStatus").className="ok";
-      }catch(e){
-        $("tickStatus").textContent="خطأ"; $("tickStatus").className="err";
-      }
-    }
-
-    /* ===== Sparkline helper ===== */
-    function drawSparkline(el, values, colors){
-      const w = el.clientWidth || 120, h = el.clientHeight || 30;
-      if(!values || values.length<2){ el.innerHTML=""; return; }
-      const min = Math.min(...values), max = Math.max(...values);
-      const norm = v => (max===min) ? h/2 : (h - ((v-min)/(max-min))*h);
-      const step = w / (values.length-1);
-      let d=""; values.forEach((v,i)=>{ const x=i*step, y=norm(v); d += (i?" L":"M")+x+" "+y; });
-      const uptrend = values.at(-1) >= values[0];
-      const stroke = uptrend ? (colors?.up || "#16a34a") : (colors?.down || "#ef4444");
-      const fill   = uptrend ? (colors?.upFill || "rgba(22,163,74,.12)") : (colors?.downFill || "rgba(239,68,68,.12)");
-      const area = d + ` L ${w} ${h} L 0 ${h} Z`;
-      el.innerHTML = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
-        <path d="${area}" fill="${fill}"></path>
-        <path d="${d}" fill="none" stroke="${stroke}" stroke-width="2"></path>
-      </svg>`;
-    }
-
-    /* ===== Heatmap ===== */
-    function hueForPct(pc){
-      const clamp = Math.max(-5, Math.min(5, pc||0));
-      return clamp>0
-        ? `rgba(22,163,74,${Math.min(0.18, Math.abs(clamp)/12)})`
-        : `rgba(239,68,68,${Math.min(0.18, Math.abs(clamp)/12)})`;
-    }
-    async function renderHeatmap(){
-      const grid = $("heatGrid"); grid.innerHTML="";
-      const rows = (await fetchSnapshots(DEFAULT_WATCH)).sort((a,b)=>Math.abs(b.pc)-Math.abs(a.pc));
-      const take = rows.slice(0, 6);
-      for(const r of take){
-        const tile = document.createElement("div"); tile.className="heat-tile";
-        const dir = r.pc>=0 ? "chg-pos":"chg-neg";
-        const pct = (r.pc>=0?"+":"")+fmt(r.pc)+"%";
-        tile.innerHTML = `
-          <div class="heat-head">
-            <div class="heat-sym">${r.s}</div>
-            <div class="heat-delta ${dir}">${pct}</div>
-          </div>
-          <div class="heat-spark"></div>
-          <div class="glow"></div>
-        `;
-        grid.appendChild(tile);
-
-        tile.style.background = `linear-gradient(180deg, ${hueForPct(r.pc)}, rgba(0,0,0,0))`;
-        tile.querySelector(".glow").style.boxShadow =
-          r.pc>=0 ? `0 0 0 3px rgba(22,163,74,.14)` : `0 0 0 3px rgba(239,68,68,.14)`;
-
-        try{
-          const bars = await getBars(r.s, "15Min");
-          const closes = (bars?.bars||[]).map(b=>+b.c).filter(n=>!isNaN(n)).slice(-60);
-          drawSparkline(tile.querySelector(".heat-spark"), closes, {up:"#16a34a",down:"#ef4444",upFill:"rgba(22,163,74,.14)",downFill:"rgba(239,68,68,.14)"});
-        }catch(e){}
-      }
-    }
-
-    /* ===== Trade CTA bridge (mobile-safe scroll to Place Order) ===== */
-    function updateUrlParams(params, withHash){
-      const url = new URL(window.location.href);
-      Object.entries(params).forEach(([k,v])=> url.searchParams.set(k, v));
-      if (withHash) url.hash = withHash;
-      history.replaceState(null, "", url.toString());
-    }
-
-    function scrollPlaceOrderCardTop(){
-      const el = document.getElementById("placeCard");
-      if(!el) return false;
-      const y = el.getBoundingClientRect().top + window.pageYOffset - HEADER_OFFSET;
-      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-      return true;
-    }
-
-    function ensurePlaceOrderVisibleWithRetries(max=12, delay=120){
-      let tries = 0;
-      const tick = ()=>{
-        if (scrollPlaceOrderCardTop() || ++tries>=max) return;
-        setTimeout(tick, delay);
-      };
-      tick();
-    }
-
-    function emitTrade(symbol, side="buy"){
-      const evt = new CustomEvent("tamror:trade", { detail: { symbol, side } });
-      window.dispatchEvent(evt);
-
-      /* Try to fill same-page form if present */
-      try{
-        const symEl = document.getElementById("symbol");
-        const sideEl = document.getElementById("side");
-        if(symEl) symEl.value = symbol.toUpperCase();
-        if(sideEl && sideEl.tagName === "SELECT") sideEl.value = side;
-      }catch(e){}
-
-      /* Update URL so Trade module on another section/page can pick it up; carry a hash for auto-scroll */
-      updateUrlParams({ trade: symbol.toUpperCase(), side: side.toLowerCase() }, "placeCard");
-
-      /* On mobile, make sure Place Order card is at the top, not half hidden */
-      ensurePlaceOrderVisibleWithRetries();
-    }
-    window.tamrorEmitTrade = emitTrade;
-
-    /* ===== Hero (ALWAYS Buy, conditionally Sell but no judder) ===== */
-    let heroIndex = 0, heroTimer = null;
-    function heroSlideHTML(r){
-      const pct = (r.pc>=0?"+":"")+fmt(r.pc)+"%";
-      const delta = (r.delta>=0?"+":"")+fmt(r.delta);
-      const have = HELD.has(String(r.s).toUpperCase());
-
-      /* Always render two buttons; when not held, Sell is a hidden "ghost" to reserve space */
-      const buyBtn  = `<button class="btn" type="button" onclick="tamrorEmitTrade('${r.s}','buy')">شراء ${r.s}</button>`;
-      const sellBtn = have
-        ? `<button class="btn btn-secondary" type="button" onclick="tamrorEmitTrade('${r.s}','sell')">بيع ${r.s}</button>`
-        : `<button class="btn btn-secondary ghost" type="button" aria-hidden="true" tabindex="-1">بيع ${r.s}</button>`;
-
-      return `<div class="hero-slide">
-        <div class="hero-left">
-          <div style="font-weight:800;color:#333;font-size:18px;letter-spacing:.2px">${r.s}</div>
-          <div class="hero-price">${fmt(r.last)} <span class="hero-delta ${r.pc>=0?'chg-pos':'chg-neg'}">${delta} · ${pct}</span></div>
-          <div class="hero-cta">${buyBtn}${sellBtn}</div>
-        </div>
-        <div class="hero-right"><div class="hero-chart"></div></div>
-      </div>`;
-    }
-
-    async function renderHero(){
-      const host = $("heroSlides"), nav = $("heroNav");
-      host.innerHTML = nav.innerHTML = "";
-      const rows = (await fetchSnapshots(DEFAULT_WATCH)).sort((a,b)=>Math.abs(b.pc)-Math.abs(a.pc)).slice(0,5);
-      for(const r of rows){
-        host.insertAdjacentHTML("beforeend", heroSlideHTML(r));
-        nav.insertAdjacentHTML("beforeend", `<span class="dot"></span>`);
-      }
-      const slides = Array.from(host.children);
-      const dots = Array.from(nav.children);
-      async function paintChart(idx){
-        const slide = slides[idx];
-        const sym = rows[idx].s;
-        try{
-          const bars = await getBars(sym, "5Min");
-          const closes = (bars?.bars||[]).map(b=>+b.c).filter(n=>!isNaN(n)).slice(-90);
-          drawSparkline(slide.querySelector(".hero-chart"), closes, {up: "#16a34a", down:"#ef4444"});
-        }catch(e){}
-      }
-      function go(i){
-        slides.forEach(s=>s.classList.remove("active"));
-        dots.forEach(d=>d.classList.remove("active"));
-        heroIndex = (i+slides.length)%slides.length;
-        slides[heroIndex].classList.add("active");
-        dots[heroIndex].classList.add("active");
-        $("heroProgress").style.width = "0%";
-        setTimeout(()=>{$("heroProgress").style.transition="none"; $("heroProgress").style.width="0%";},10);
-        setTimeout(()=>{$("heroProgress").style.transition=`width ${HERO_ROTATE_MS}ms linear`; $("heroProgress").style.width="100%";},30);
-        paintChart(heroIndex);
-      }
-      dots.forEach((d,i)=> d.onclick=()=>{ clearInterval(heroTimer); go(i); heroTimer=setInterval(()=>go(heroIndex+1), HERO_ROTATE_MS); });
-      go(0);
-      clearInterval(heroTimer);
-      heroTimer = setInterval(()=>go(heroIndex+1), HERO_ROTATE_MS);
-    }
-
-    /* ===== Init & refresh ===== */
-    async function refreshAll(){
-      await Promise.all([refreshHeld(), loadTicker(DEFAULT_WATCH), renderHeatmap()]);
-      await renderHero(); // hero after holdings fetched so Sell button state is correct
-    }
-
-    setInterval(()=> loadTicker(DEFAULT_WATCH), TICKER_REFRESH_MS);
-    setInterval(refreshHeld, POSITIONS_REFRESH_MS);
-
-    document.addEventListener("DOMContentLoaded", async ()=>{
-      await refreshAll();
-
-      /* If we landed here with ?trade= in the URL, ensure the Place Order card is scrolled to the top */
-      try{
-        const url = new URL(window.location.href);
-        const sym = url.searchParams.get("trade");
-        const sd  = (url.searchParams.get("side") || "buy");
-        if(sym){
-          /* Emit to same-page Trade module if present and scroll to the card top on mobile */
-          emitTrade(sym.toUpperCase(), sd.toLowerCase());
+        if(blocked.length){
+          var msg = "غير متوافق شرعياً: " + blocked.join("، ");
+          resultEl.textContent = msg; alert(msg);
+          throw new Error("Sharia check failed for: " + blocked.join(", "));
         }
-      }catch(e){}
-    });
 
-    /* Optional: same-page order form helper (kept for compatibility) */
-    window.addEventListener("tamror:trade", (e)=>{
-      try{
-        const { symbol, side } = e.detail || {};
-        const symEl = document.getElementById("symbol");
-        const sideEl = document.getElementById("side");
-        if(symEl) symEl.value = (symbol||"").toUpperCase();
-        if(sideEl && sideEl.tagName === "SELECT") sideEl.value = (side||"buy");
-      }catch(_){}
-    });
+        // Optional: warn for review/unknown (allow anyway). To hard-block, uncomment next 3 lines.
+        if(review.length){
+          alert("تنبيه مراجعة شرعية: " + review.join("، "));
+          // resultEl.textContent = "مراجعة مطلوبة: " + review.join("، "); throw new Error("Sharia review gate");
+        }
+
+        // 2) Place orders sequentially
+        resultEl.textContent = "جارٍ إرسال الأمر…";
+        var success=[], failures=[], refreshNeeded=false;
+
+        function submitNext(index){
+          if(index>=symbols.length){ return Promise.resolve(); }
+          var sym = symbols[index];
+          resultEl.textContent = "جارٍ إرسال أمر لـ " + sym + "…";
+          var payload = { symbol:sym, side:side, type:"market", time_in_force:"day", qty:String(qty) };
+          return postOrder(payload).then(function(resp){
+            refreshNeeded = true; success.push(sym + " (" + (resp.status || "submitted") + ")");
+          }).catch(function(e){
+            failures.push(sym + ": " + e.message);
+          }).then(function(){ return submitNext(index+1); });
+        }
+
+        return submitNext(0).then(function(){
+          var parts=[];
+          if(success.length){ parts.push((success.length>1?"تم إرسال الطلبات: ":"تم إرسال الطلب: ")+success.join("، ")); }
+          if(failures.length){ parts.push((failures.length>1?"الأخطاء": "الخطأ")+": "+failures.join(" · ")); }
+          if(!parts.length){ parts.push("لم يتم إرسال أي أوامر."); }
+          resultEl.textContent = parts.join(" · ");
+          if(failures.length){ alert((failures.length>1?"فشلت بعض الأوامر: ":"فشل الأمر: ")+failures.join(" · ")); }
+          if(refreshNeeded){ return Promise.all([renderAccount(),renderPositions(),renderOrders()]).catch(function(e){
+            var extra="فشل التحديث: "+e.message;
+            resultEl.textContent = resultEl.textContent ? resultEl.textContent+" · "+extra : extra;
+            alert(extra);
+          }); }
+        });
+      }).catch(function(e){
+        // If we threw from the compliance gate, message already shown
+        if(!/Sharia/.test(String(e && e.message))) alert("فشل الأمر: "+ (e && e.message ? e.message : e));
+      }).finally(function(){ orderBtn.disabled=false; });
+    }
+
+    function init(){
+      checkProxy().then(function(ok){
+        if(ok){ return Promise.all([renderAccount(),renderPositions(),renderOrders()]); }
+      }).catch(function(e){
+        var t=$("conn-text");
+        if(t && /(Checking|جارٍ التحقق)/.test(t.textContent)){
+          t.textContent="انقطع الاتصال (خطأ عند البدء)";
+          $("conn-dot").style.background="#f59e0b";
+          $("proxy-note").classList.add("show");
+        }
+      });
+
+      $("placeOrder").addEventListener("click", onPlace);
+      $("refreshAccount").addEventListener("click", renderAccount);
+      $("refreshPositions").addEventListener("click", renderPositions);
+      $("refreshOrders").addEventListener("click", renderOrders);
+
+      document.querySelectorAll('.accordion').forEach(function(card){
+        var btn = card.querySelector('[data-accordion-button]');
+        var panel = card.querySelector('[data-accordion-panel]');
+        function applyState(open){
+          card.setAttribute('data-open', open ? 'true' : 'false');
+          if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          if (panel) panel.hidden = open ? false : true;
+        }
+        var initialOpen = card.getAttribute('data-open') !== 'false';
+        applyState(initialOpen);
+        if(btn){
+          btn.addEventListener('click', function(){
+            var isOpen = card.getAttribute('data-open') !== 'false';
+            applyState(!isOpen);
+          });
+        }
+      });
+
+      // Start pill
+      updateShariaPillForInput();
+      symInput.addEventListener('input', debounce(updateShariaPillForInput, 180));
+    }
+    document.addEventListener("DOMContentLoaded", init);
+  })();
   </script>
 </div>
