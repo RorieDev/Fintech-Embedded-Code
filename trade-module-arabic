@@ -81,6 +81,7 @@
     .table{width:100%;border-collapse:separate;border-spacing:0 10px}
     .table th{font-size:12px;text-align:left;color:#555;font-weight:700;padding:0 10px;white-space:nowrap}
     .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
+    .table .sharia-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
     #orders-table th:first-child,#orders-table td:first-child{min-width:150px;direction:ltr;font-variant-numeric:tabular-nums;text-align:left}
     #orders-table th:nth-child(2),#orders-table td:nth-child(2){min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
