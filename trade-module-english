@@ -311,6 +311,8 @@
     var ORIGIN    = window.location.origin || (window.location.protocol + "//" + window.location.host);
     var PROXY_URL = ORIGIN + "/wp-json/alpaca/v1";
 
+    
+
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
     var lastAccountPortfolio = null;
@@ -359,6 +361,7 @@
         return res.text();
       });
     }
+
 
     function checkProxy(){
       var labelEl = $("proxy-url-label"); if (labelEl) labelEl.textContent = PROXY_URL;
@@ -410,27 +413,57 @@
       return getPositions().then(function(list){
         var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
-          lastPhysicalTotal = 0;
-          updateTotalSummary();
-          return;
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          purificationRelay = Object.create(null);
+          lastPhysicalTotal = 0; updateTotalSummary(); return;
         }
+        var tasks=[];
+        var activeSymbols = Object.create(null);
         list.forEach(function(p){
           var tr=document.createElement("tr");
+          var sym = (p.symbol||"").toUpperCase();
+          if(sym){ activeSymbols[sym]=true; }
           tr.appendChild(td("Symbol",p.symbol));
           tr.appendChild(td("Avg Price",fmtCurrency(p.avg_entry_price)));
           tr.appendChild(td("Mkt Value",fmtCurrency(p.market_value)));
+          var shariaInfo = createShariaCell();
+          tr.appendChild(shariaInfo.cell);
           tr.appendChild(td("Unrealized P/L",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
-          var mv = toValidNumber(p.market_value);
-          if(mv!=null){ total += mv; }
+          var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
+          var profit = toValidNumber(p.unrealized_pl);
+          var task = getSharia(p.symbol).then(function(res){
+            var status = (res && res.status) || 'unknown';
+            if(status === 'halal'){
+              setPill(shariaInfo.pill,'Compliant (Halal)','var(--accent)');
+              clearPurificationFlag(sym);
+            } else if(status === 'review' || status === 'mixed'){
+              setPill(shariaInfo.pill,'Review needed','#f59e0b');
+              clearPurificationFlag(sym);
+            } else if(status === 'haram' || status === 'non-compliant' || status === 'non_compliant'){
+              setPill(shariaInfo.pill,'Non-compliant','#ef4444');
+              if(profit!=null && profit>0){
+                var ratio = extractNonCompliantRatio(res);
+                relayPurification(sym, profit, ratio);
+              } else {
+                clearPurificationFlag(sym);
+              }
+            } else {
+              setPill(shariaInfo.pill,'Unknown','#9aa3ab');
+              clearPurificationFlag(sym);
+            }
+          }).catch(function(){
+            setPill(shariaInfo.pill,'Unknown','#9aa3ab');
+            clearPurificationFlag(sym);
+          });
+          tasks.push(task);
         });
-        lastPhysicalTotal = total;
-        updateTotalSummary();
+        Object.keys(purificationRelay).forEach(function(key){ if(!activeSymbols[key]){ delete purificationRelay[key]; } });
+        lastPhysicalTotal = total; updateTotalSummary();
+        return Promise.all(tasks);
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="Failed to load positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
-        lastPhysicalTotal = null;
-        updateTotalSummary();
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="Failed to load positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        lastPhysicalTotal = null; updateTotalSummary();
       });
     }
     function renderOrders(){
@@ -536,6 +569,7 @@
         var sideEl = document.getElementById("side");
         if (symEl) symEl.value = (symbol||"").toUpperCase();
         if (sideEl && sideEl.tagName === "SELECT") sideEl.value = (side||"buy");
+        if (typeof updateShariaPillForInput === 'function') { updateShariaPillForInput(); }
         scrollToQtyThenFocus(); flashOrderCard();
       }
       window.addEventListener("tamror:trade", function(e){
@@ -628,6 +662,8 @@
           });
         }
       });
+
+      
     }
     document.addEventListener("DOMContentLoaded", init);
   })();
