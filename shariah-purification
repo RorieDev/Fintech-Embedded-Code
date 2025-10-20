@@ -1,8 +1,8 @@
 <!-- TamRor · Shariah Purification Card (Arabic)
-     - Overlay-safe inputs
-     - Aligned numeric columns (RTL-friendly)
-     - SYMBOL AUTOCOMPLETE (local seed + optional proxy live search)
-     - Mobile table fix: keep columns, enable horizontal scroll -->
+     - Donation column narrower
+     - "مسح السجل" button = pink (white text)
+     - Symbol dropdown closes on selection and re-opens only when value changes
+     - Mobile table keeps columns via horizontal scroll -->
 <div id="tamror-purification" class="tamror-root">
   <style>
     :root{
@@ -56,14 +56,14 @@
     .table tr{box-shadow:var(--shadow)}
     .table td.actions{display:flex;gap:8px;justify-content:flex-start}
 
-    /* Column widths */
-    .table col.c-sym   { width:16% }
-    .table col.c-num   { width:20% }
-    .table col.c-pct   { width:16% }
-    .table col.c-don   { width:auto }
-    .table col.c-act   { width:14% }
+    /* Column widths (donation column narrowed) */
+    .table col.c-sym { width:18% }
+    .table col.c-div { width:18% }
+    .table col.c-pct { width:14% }
+    .table col.c-don { width:20% }  /* narrower than before */
+    .table col.c-act { width:14% }
 
-    /* Numeric cells: right edge, but LTR flow to avoid RTL punctuation issues */
+    /* Numeric cells: right aligned with LTR flow for punctuation */
     .table td.num, .table th.th-num{
       text-align:right; direction:ltr; unicode-bidi:plaintext; font-variant-numeric:tabular-nums;
     }
@@ -76,15 +76,12 @@
     /* ===== Mobile: keep columns, enable horizontal scroll ===== */
     .table-shell{ width:100%; overflow-x:visible; }
     @media (max-width:680px){
-      .table-shell{
-        overflow-x:auto;
-        -webkit-overflow-scrolling:touch;
-      }
-      .table{ min-width: 760px; }                 /* ensure columns have space */
-      .table thead{ display:table-header-group; } /* keep headers */
+      .table-shell{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+      .table{ min-width: 760px; }
+      .table thead{ display:table-header-group; }
       .table tr{ display:table-row; }
       .table td, .table th{ display:table-cell; }
-      .table td::before{ content:none !important; } /* kill card labels */
+      .table td::before{ content:none !important; }
     }
   </style>
 
@@ -122,12 +119,12 @@
         يمكنك إدخال النسبة يدويًا أو جلبها من خادمك (إن توفرت).
       </div>
 
-      <!-- Ledger (wrapped for horizontal scroll on mobile) -->
+      <!-- Ledger -->
       <div class="table-shell">
         <table class="table" id="p_table" dir="rtl" aria-live="polite" tabindex="-1">
           <colgroup>
             <col class="c-sym">
-            <col class="c-num">
+            <col class="c-div">
             <col class="c-pct">
             <col class="c-don">
             <col class="c-act">
@@ -154,7 +151,8 @@
       <div class="row" style="margin-top:10px" dir="rtl">
         <div class="col" style="flex:0 0 auto; display:flex; gap:8px">
           <button id="p_export" class="btn btn-secondary" type="button">تصدير CSV</button>
-          <button id="p_clear" class="btn btn-ghost" type="button">مسح السجل</button>
+          <!-- Styled pink like other primary actions -->
+          <button id="p_clear" class="btn" type="button">مسح السجل</button>
         </div>
         <div class="col" style="flex:1">
           <div class="note">
@@ -170,30 +168,24 @@
     (function(){
       const ORIGIN = window.location.origin || (location.protocol + '//' + location.host);
       const SHARIA_API = ORIGIN + '/wp-json/aiaas/v1/sharia-check';
-      const PROXY_BASE = '/wp-json/alpaca/v1';   // optional live search
+      const PROXY_BASE = '/wp-json/alpaca/v1';
       const $ = (id)=>document.getElementById(id);
 
-      /* ================== Helpers ================== */
+      /* Helpers */
       const fmtUSD = (n)=> (n==null || isNaN(+n)) ? '$0.00' : (+n).toLocaleString(undefined,{style:'currency',currency:'USD'});
       const clamp = (v,min,max)=> Math.min(max, Math.max(min, v));
       const normSym = (s)=> String(s||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
-      const debounce = (fn,ms)=>{
-        let t;
-        const debounced = (...a)=>{
-          clearTimeout(t);
-          t = setTimeout(()=>{ t = null; fn(...a); }, ms);
-        };
-        debounced.cancel = ()=>{ clearTimeout(t); t = null; };
-        return debounced;
-      };
+      const debounce = (fn,ms)=>{ let t; const f=(...a)=>{ clearTimeout(t); t=setTimeout(()=>{ t=null; fn(...a); },ms); }; f.cancel=()=>{clearTimeout(t);t=null;}; return f; };
       const escapeHTML = (s)=> String(s).replace(/[<>&"]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
 
-      /* ================== Autocomplete ================== */
+      /* Autocomplete */
       const AC_SEED = ["AAPL","TSLA","NVDA","AMZN","GOOG","META","MSFT","ORCL","NFLX","ADBE","CRM","AMD","INTC","BA","DIS","V","MA","JPM","BAC","WFC","QCOM","MU","TXN","AVGO","COIN","PYPL","SQ","SHOP","UBER","SNOW","PANW","NIO","BABA","PDD","JD","T","VZ","ASML","SAP","NOW"];
       const acList = $('p_ac_list');
       const symInput = $('p_symbol');
       const amountInput = $('p_dividend');
       const pctInput = $('p_pct');
+
+      let lastCommittedSymbol = "";    // -> keeps dropdown closed until value changes
 
       function closeAC(){ acList.style.display = 'none'; acList.innerHTML=''; }
       function openAC(){ if(acList.innerHTML) acList.style.display='block'; }
@@ -206,11 +198,11 @@
         }).join('');
         acList.querySelectorAll('.ac-item').forEach(div=>{
           div.onclick = ()=> selectSymbol(div.getAttribute('data-s'));
+          div.ontouchstart = ()=> selectSymbol(div.getAttribute('data-s')); // mobile tap
         });
         openAC();
       }
 
-      // Try proxy live search (best effort)
       async function searchProxy(q){
         try{
           const r = await fetch(`${PROXY_BASE}/market/search?q=${encodeURIComponent(q)}&_ts=${Date.now()}`, {cache:'no-store'});
@@ -226,32 +218,26 @@
       }
 
       const doAC = debounce(async ()=>{
-        if(document.activeElement !== symInput){
-          closeAC();
-          return;
-        }
-        const qRaw = symInput.value || '';
-        const q = normSym(qRaw);
-        if(!q){ closeAC(); return; }
-
-        const local = AC_SEED.filter(s=> s.indexOf(q)===0).map(s=>({s, n:''}));
-        const remote = await searchProxy(q);
+        const current = normSym(symInput.value);
+        if(!current || current === lastCommittedSymbol){ closeAC(); return; } // don't re-open unless changed
+        const local = AC_SEED.filter(s=> s.indexOf(current)===0).map(s=>({s, n:''}));
+        const remote = await searchProxy(current);
         const seen = new Set();
-        const merged = [...local, ...remote].filter(x=>{
-          if(seen.has(x.s)) return false; seen.add(x.s); return true;
-        });
-
+        const merged = [...local, ...remote].filter(x=>{ if(seen.has(x.s)) return false; seen.add(x.s); return true; });
         acRender(merged.length ? merged : local);
       }, 140);
 
       function selectSymbol(s){
-        symInput.value = s.toUpperCase();
+        const v = normSym(s);
+        symInput.value = v;
+        lastCommittedSymbol = v;   // remember selection
         doAC.cancel && doAC.cancel();
-        closeAC();
+        closeAC();                 // keep it closed until user edits the value
         amountInput && amountInput.focus();
       }
 
       symInput.addEventListener('input', doAC);
+      // On focus: only open if user previously changed value (handled by doAC condition)
       symInput.addEventListener('focus', doAC);
       symInput.addEventListener('keydown', (e)=>{
         if(e.key === 'Enter'){
@@ -265,7 +251,7 @@
       });
       symInput.addEventListener('blur', ()=> setTimeout(closeAC, 120));
 
-      /* ================== Column focus (mobile nicety) ================== */
+      /* Column focus helper */
       document.querySelectorAll('#tamror-purification .col[data-focus]').forEach(col=>{
         col.addEventListener('click', ()=>{
           const el = document.querySelector(col.getAttribute('data-focus'));
@@ -273,7 +259,7 @@
         });
       });
 
-      /* ================== Purification logic ================== */
+      /* Purification logic */
       const tableEl = $('p_table');
       const tbody = tableEl.querySelector('tbody');
 
@@ -293,12 +279,9 @@
       }
 
       function addRow(sym, dividend, pct){
-        const cleanSym = normSym(sym);
-        const displaySym = cleanSym || String(sym||'').trim().toUpperCase();
         const donation = calcDonation(dividend, pct);
         const tr = document.createElement('tr');
         tr.setAttribute('data-donation', String(donation));
-        tr.setAttribute('data-symbol', displaySym);
         function td(label, html, cls){
           const cell = document.createElement('td');
           cell.setAttribute('data-label', label);
@@ -306,7 +289,7 @@
           cell.innerHTML = html;
           return cell;
         }
-        tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(displaySym)}</b>`, 'sym'));
+        tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(sym)}</b>`, 'sym'));
         tr.appendChild(td('الأرباح (USD)', fmtUSD(dividend), 'num'));
         tr.appendChild(td('نسبة غير متوافق (%)', (isFinite(pct)? (+pct).toFixed(2) : '—'), 'num'));
         tr.appendChild(td('التبرع الواجب (USD)', `<b style="color:#333">${fmtUSD(donation)}</b>`, 'num'));
@@ -322,7 +305,6 @@
 
         tbody.insertBefore(tr, tbody.firstChild);
         recalcTotal();
-        return tr;
       }
 
       async function fetchRatio(sym){
@@ -362,31 +344,13 @@
         if(!(isFinite(div) && div >= 0)){ alert('الأرباح غير صالحة.'); return; }
         if(!(isFinite(pct) && pct >= 0 && pct <= 100)){ alert('النسبة غير صالحة (0–100).'); return; }
         addRow(sym, div, clamp(pct,0,100));
+        // Clear and keep AC closed until the user types again
         symInput.value = '';
+        lastCommittedSymbol = '';
         amountInput.value = '';
         pctInput.value = '';
         closeAC();
-        try{
-          tableEl.focus({preventScroll:true});
-        }catch(_){
-          tableEl.focus();
-        }
-      });
-
-      window.addEventListener('tamror:purification:add', (ev)=>{
-        try{
-          const detail = ev.detail || {};
-          const sym = normSym(detail.symbol);
-          const profit = Number(detail.profit);
-          if(!sym || !(isFinite(profit) && profit > 0)) return;
-          let pct = Number(detail.nonCompliantPct);
-          if(!isFinite(pct) || pct < 0){ pct = 100; }
-          pct = clamp(pct, 0, 100);
-          const existing = tbody.querySelector(`tr[data-symbol='${sym}'][data-source='auto']`);
-          if(existing){ existing.remove(); }
-          const row = addRow(sym, profit, pct);
-          if(row){ row.setAttribute('data-source','auto'); }
-        }catch(_){ }
+        try{ tableEl.focus({preventScroll:true}); }catch(_){ tableEl.focus(); }
       });
 
       $('p_clear').addEventListener('click', ()=>{
@@ -420,13 +384,6 @@
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=> URL.revokeObjectURL(url), 2000);
       });
-
-      const donateBtn = Array.from(document.querySelectorAll('#tamror-purification button, #tamror-purification a'))
-        .find(btn=> btn.textContent && /تبرع|Donate/i.test(btn.textContent));
-      if(donateBtn){
-        donateBtn.classList.add('btn');
-        donateBtn.classList.remove('btn-secondary','btn-ghost');
-      }
     })();
   </script>
 </div>
