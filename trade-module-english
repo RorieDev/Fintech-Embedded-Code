@@ -14,6 +14,7 @@
     .brand .title{font-weight:700;font-size:20px;letter-spacing:.2px;color:var(--text)}
     .status{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--text)}
+    .sharia-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
     .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
 
     .grid{
@@ -278,7 +279,7 @@
         </button>
         <div class="accordion-body" data-accordion-panel>
           <table class="table" id="positions-table">
-            <thead><tr><th>Symbol</th><th>Avg Price</th><th>Mkt Value</th><th>Unrealized P/L</th></tr></thead>
+            <thead><tr><th>Symbol</th><th>Avg Price</th><th>Mkt Value</th><th>Sharia</th><th>Unrealized P/L</th></tr></thead>
             <tbody></tbody>
           </table>
           <button class="btn btn-secondary" id="refreshPositions" type="button">Refresh</button>
@@ -310,6 +311,11 @@
   (function(){
     var ORIGIN    = window.location.origin || (window.location.protocol + "//" + window.location.host);
     var PROXY_URL = ORIGIN + "/wp-json/alpaca/v1";
+
+    // Sharia compliance service (parity with Market/Arabic modules)
+    var SHARIA_URL = ORIGIN + '/wp-json/aiaas/v1/sharia-check';
+    var shariaCache = Object.create(null);
+    var purificationRelay = Object.create(null);
 
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
@@ -358,6 +364,102 @@
         if (ct.indexOf("application/json")>-1){ return res.json(); }
         return res.text();
       });
+    }
+
+    function extractNonCompliantRatio(res){
+      if(res && res.ratios){
+        if(res.ratios.non_compliant_revenue_pct != null){ return res.ratios.non_compliant_revenue_pct; }
+        if(res.ratios.non_compliant_income_pct != null){ return res.ratios.non_compliant_income_pct; }
+      }
+      return null;
+    }
+    function clearPurificationFlag(symbol){
+      var key = (symbol||'').toUpperCase();
+      if(key){ delete purificationRelay[key]; }
+    }
+    function relayPurification(symbol, profit, ratio){
+      if(typeof window === 'undefined') return;
+      var sym = (symbol||'').toUpperCase();
+      var profitNum = Number(profit);
+      if(!sym || !(profitNum>0)) return;
+      var last = purificationRelay[sym];
+      if(last!=null && Math.abs(last - profitNum) < 0.01) return;
+      purificationRelay[sym] = profitNum;
+      var detail = { symbol: sym, profit: profitNum };
+      if(ratio!=null && isFinite(ratio)){ detail.nonCompliantPct = Number(ratio); }
+      window.dispatchEvent(new CustomEvent('tamror:purification:add', { detail: detail }));
+    }
+    function getSharia(symbol){
+      var s = (symbol||'').toUpperCase();
+      if(!s) return Promise.resolve({ status:'unknown' });
+      if (shariaCache[s]) return Promise.resolve(shariaCache[s]);
+      var url = SHARIA_URL + '?symbol=' + encodeURIComponent(s) + '&_ts=' + Date.now();
+      return fetch(url, { cache:'no-store' })
+        .then(function(r){ return r.json(); })
+        .then(function(j){ shariaCache[s] = j; return j; })
+        .catch(function(){ return { status:'unknown' }; });
+    }
+    function ensureShariaPill(){
+      var wrap = document.querySelector('.ac-wrap');
+      if(!wrap) return null;
+      var pill = document.getElementById('sharia-pill');
+      if(!pill){
+        pill = document.createElement('div');
+        pill.id = 'sharia-pill';
+        pill.style.marginTop = '6px';
+        pill.style.fontSize = '12px';
+        pill.style.display = 'inline-flex';
+        pill.style.alignItems = 'center';
+        pill.style.gap = '8px';
+        pill.style.padding = '6px 10px';
+        pill.style.border = '1px solid var(--border)';
+        pill.style.borderRadius = '999px';
+        pill.style.background = 'var(--surface-2)';
+        pill.style.color = 'var(--text)';
+        pill.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#9aa3ab;display:inline-block"></span><span>—</span>';
+        wrap.parentNode.appendChild(pill);
+      }
+      return pill;
+    }
+    function setPill(pill, stateText, color){
+      if(!pill) return;
+      var dot = pill.firstChild;
+      var label = pill.lastChild;
+      dot.style.background = color || '#9aa3ab';
+      label.textContent = stateText;
+    }
+    function createShariaCell(){
+      var cell = document.createElement('td');
+      cell.setAttribute('data-label','Sharia Compliance');
+      var pill = document.createElement('span');
+      pill.className = 'sharia-pill';
+      var dot = document.createElement('span');
+      dot.className = 'dot';
+      var label = document.createElement('span');
+      pill.appendChild(dot);
+      pill.appendChild(label);
+      cell.appendChild(pill);
+      setPill(pill,'—','#9aa3ab');
+      return { cell: cell, pill: pill };
+    }
+    function updateShariaPillForInput(){
+      var pill = ensureShariaPill();
+      var raw = (document.getElementById('symbol')?.value || '').toUpperCase();
+      var first = raw.split(/[\s,\/]+/).map(function(s){return s.trim();}).filter(Boolean)[0];
+      if(!first){ setPill(pill,'—','#9aa3ab'); return; }
+      setPill(pill,'Checking…','#9aa3ab');
+      getSharia(first).then(function(res){
+        var st = (res && res.status || 'unknown');
+        if(st === 'halal'){
+          setPill(pill,'Compliant (Halal)','var(--accent)');
+        }else if(st === 'review' || st === 'mixed'){
+          setPill(pill,'Review needed','#f59e0b');
+        }else if(st === 'haram' || st === 'non-compliant'){
+          setPill(pill,'Non-compliant','#ef4444');
+        }else{
+          setPill(pill,'Unknown','#9aa3ab');
+        }
+      }).catch(function(){ setPill(pill,'Unknown','#9aa3ab'); });
     }
 
     function checkProxy(){
@@ -410,27 +512,57 @@
       return getPositions().then(function(list){
         var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
-          lastPhysicalTotal = 0;
-          updateTotalSummary();
-          return;
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="No open positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          purificationRelay = Object.create(null);
+          lastPhysicalTotal = 0; updateTotalSummary(); return;
         }
+        var tasks=[];
+        var activeSymbols = Object.create(null);
         list.forEach(function(p){
           var tr=document.createElement("tr");
+          var sym = (p.symbol||"").toUpperCase();
+          if(sym){ activeSymbols[sym]=true; }
           tr.appendChild(td("Symbol",p.symbol));
           tr.appendChild(td("Avg Price",fmtCurrency(p.avg_entry_price)));
           tr.appendChild(td("Mkt Value",fmtCurrency(p.market_value)));
+          var shariaInfo = createShariaCell();
+          tr.appendChild(shariaInfo.cell);
           tr.appendChild(td("Unrealized P/L",fmtCurrency(p.unrealized_pl)));
           body.appendChild(tr);
-          var mv = toValidNumber(p.market_value);
-          if(mv!=null){ total += mv; }
+          var mv = toValidNumber(p.market_value); if(mv!=null){ total += mv; }
+          var profit = toValidNumber(p.unrealized_pl);
+          var task = getSharia(p.symbol).then(function(res){
+            var status = (res && res.status) || 'unknown';
+            if(status === 'halal'){
+              setPill(shariaInfo.pill,'Compliant (Halal)','var(--accent)');
+              clearPurificationFlag(sym);
+            } else if(status === 'review' || status === 'mixed'){
+              setPill(shariaInfo.pill,'Review needed','#f59e0b');
+              clearPurificationFlag(sym);
+            } else if(status === 'haram' || status === 'non-compliant' || status === 'non_compliant'){
+              setPill(shariaInfo.pill,'Non-compliant','#ef4444');
+              if(profit!=null && profit>0){
+                var ratio = extractNonCompliantRatio(res);
+                relayPurification(sym, profit, ratio);
+              } else {
+                clearPurificationFlag(sym);
+              }
+            } else {
+              setPill(shariaInfo.pill,'Unknown','#9aa3ab');
+              clearPurificationFlag(sym);
+            }
+          }).catch(function(){
+            setPill(shariaInfo.pill,'Unknown','#9aa3ab');
+            clearPurificationFlag(sym);
+          });
+          tasks.push(task);
         });
-        lastPhysicalTotal = total;
-        updateTotalSummary();
+        Object.keys(purificationRelay).forEach(function(key){ if(!activeSymbols[key]){ delete purificationRelay[key]; } });
+        lastPhysicalTotal = total; updateTotalSummary();
+        return Promise.all(tasks);
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="Failed to load positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
-        lastPhysicalTotal = null;
-        updateTotalSummary();
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="Failed to load positions."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        lastPhysicalTotal = null; updateTotalSummary();
       });
     }
     function renderOrders(){
@@ -536,6 +668,7 @@
         var sideEl = document.getElementById("side");
         if (symEl) symEl.value = (symbol||"").toUpperCase();
         if (sideEl && sideEl.tagName === "SELECT") sideEl.value = (side||"buy");
+        if (typeof updateShariaPillForInput === 'function') { updateShariaPillForInput(); }
         scrollToQtyThenFocus(); flashOrderCard();
       }
       window.addEventListener("tamror:trade", function(e){
@@ -628,6 +761,15 @@
           });
         }
       });
+
+      // Start Sharia pill under the Symbol input and keep it in sync
+      try{
+        var symInput = document.getElementById('symbol');
+        if (symInput){
+          updateShariaPillForInput();
+          symInput.addEventListener('input', (function(){ var t; return function(){ clearTimeout(t); t=setTimeout(updateShariaPillForInput, 180); }; })());
+        }
+      }catch(_){ }
     }
     document.addEventListener("DOMContentLoaded", init);
   })();
