@@ -16,6 +16,7 @@
     .pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:6px 12px;font-weight:600;color:var(--text)}
     .sharia-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
     .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+    .symbol-pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;align-items:center}
 
     .grid{display:flex;flex-wrap:wrap;gap:16px;align-items:stretch;align-content:flex-start;}
     .grid>.card{align-self:stretch;flex:1 1 100%;min-width:0;display:flex;flex-direction:column;}
@@ -576,32 +577,52 @@
     symInput.addEventListener("blur", function(){ setTimeout(function(){ acList.style.display="none"; }, 140); });
     symInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); acList.style.display="none"; $("qty").focus(); } });
 
-    function ensureShariaPill(){
+    function ensureSymbolPillHost(){
       var wrap = document.querySelector('.ac-wrap');
-      if(!wrap) return null;
-      var pill = document.getElementById('sharia-pill');
-      if(!pill){
-        pill = document.createElement('div');
-        pill.id = 'sharia-pill';
-        pill.style.marginTop = '6px';
-        pill.style.fontSize = '12px';
-        pill.style.display = 'inline-flex';
-        pill.style.alignItems = 'center';
-        pill.style.gap = '8px';
-        pill.style.padding = '6px 10px';
-        pill.style.border = '1px solid var(--border)';
-        pill.style.borderRadius = '999px';
-        pill.style.background = 'var(--surface-2)';
-        pill.style.color = 'var(--text)';
-        pill.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#9aa3ab;display:inline-block"></span><span>—</span>';
-        wrap.parentNode.appendChild(pill);
+      if(!wrap || !wrap.parentNode) return null;
+      var host = wrap.parentNode.querySelector('.symbol-pills');
+      if(!host){
+        host = document.createElement('div');
+        host.className = 'symbol-pills';
+        wrap.parentNode.appendChild(host);
       }
+      return host;
+    }
+    function ensureShariaPill(){
+      var host = ensureSymbolPillHost();
+      if(!host) return null;
+      var legacy = host.querySelector('#sharia-pill');
+      if(legacy && !legacy.hasAttribute('data-role')){
+        var replacement = document.createElement('span');
+        replacement.className = 'sharia-pill';
+        replacement.setAttribute('data-role','sharia-pill');
+        host.replaceChild(replacement, legacy);
+      }
+      var pill = host.querySelector('[data-role="sharia-pill"]');
+      if(!pill){
+        pill = document.createElement('span');
+        pill.className = 'sharia-pill';
+        pill.setAttribute('data-role','sharia-pill');
+        host.appendChild(pill);
+      }
+      var duplicates = host.querySelectorAll('[data-role="sharia-pill"]');
+      duplicates.forEach(function(node){ if(node !== pill){ node.remove(); } });
       return pill;
     }
     function setPill(pill, stateText, color){
       if(!pill) return;
-      var dot = pill.firstChild;
-      var label = pill.lastChild;
+      var dot = pill.querySelector('.dot');
+      if(!dot){
+        dot = document.createElement('span');
+        dot.className = 'dot';
+        pill.insertBefore(dot, pill.firstChild || null);
+      }
+      var label = pill.querySelector('[data-role="label"]');
+      if(!label){
+        label = document.createElement('span');
+        label.setAttribute('data-role','label');
+        pill.appendChild(label);
+      }
       dot.style.background = color || '#9aa3ab';
       label.textContent = stateText;
     }
@@ -610,11 +631,7 @@
       cell.setAttribute('data-label','التوافق الشرعي');
       var pill = document.createElement('span');
       pill.className = 'sharia-pill';
-      var dot = document.createElement('span');
-      dot.className = 'dot';
-      var label = document.createElement('span');
-      pill.appendChild(dot);
-      pill.appendChild(label);
+      pill.setAttribute('data-role','sharia-pill');
       cell.appendChild(pill);
       setPill(pill,'—','#9aa3ab');
       return { cell: cell, pill: pill };
