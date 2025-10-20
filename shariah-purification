@@ -279,9 +279,12 @@
       }
 
       function addRow(sym, dividend, pct){
+        const cleanSym = normSym(sym);
+        const displaySym = cleanSym || String(sym||'').trim().toUpperCase();
         const donation = calcDonation(dividend, pct);
         const tr = document.createElement('tr');
         tr.setAttribute('data-donation', String(donation));
+        tr.setAttribute('data-symbol', displaySym);
         function td(label, html, cls){
           const cell = document.createElement('td');
           cell.setAttribute('data-label', label);
@@ -289,7 +292,7 @@
           cell.innerHTML = html;
           return cell;
         }
-        tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(sym)}</b>`, 'sym'));
+        tr.appendChild(td('الرمز', `<b style="color:#333">${escapeHTML(displaySym)}</b>`, 'sym'));
         tr.appendChild(td('الأرباح (USD)', fmtUSD(dividend), 'num'));
         tr.appendChild(td('نسبة غير متوافق (%)', (isFinite(pct)? (+pct).toFixed(2) : '—'), 'num'));
         tr.appendChild(td('التبرع الواجب (USD)', `<b style="color:#333">${fmtUSD(donation)}</b>`, 'num'));
@@ -305,6 +308,7 @@
 
         tbody.insertBefore(tr, tbody.firstChild);
         recalcTotal();
+        return tr;
       }
 
       async function fetchRatio(sym){
@@ -351,6 +355,31 @@
         pctInput.value = '';
         closeAC();
         try{ tableEl.focus({preventScroll:true}); }catch(_){ tableEl.focus(); }
+      });
+
+      window.addEventListener('tamror:purification:add', async (ev)=>{
+        try{
+          const detail = ev.detail || {};
+          const sym = normSym(detail.symbol);
+          const profit = Number(detail.profit);
+          if(!sym || !(isFinite(profit) && profit > 0)) return;
+
+          let pct = Number(detail.nonCompliantPct);
+          if(!(isFinite(pct) && pct >= 0)){
+            try{
+              const fetched = await fetchRatio(sym);
+              if(isFinite(fetched)){ pct = Number(fetched); }
+            }catch(_){ }
+          }
+          if(!(isFinite(pct) && pct >= 0)){ pct = 100; }
+          pct = clamp(pct, 0, 100);
+
+          const existing = tbody.querySelector(`tr[data-symbol='${sym}'][data-source='auto']`);
+          if(existing){ existing.remove(); }
+
+          const row = addRow(sym, profit, pct);
+          if(row){ row.setAttribute('data-source','auto'); }
+        }catch(_){ }
       });
 
       $('p_clear').addEventListener('click', ()=>{
