@@ -151,8 +151,8 @@
       <div class="row" style="margin-top:10px" dir="rtl">
         <div class="col" style="flex:0 0 auto; display:flex; gap:8px">
           <button id="p_export" class="btn btn-secondary" type="button">تصدير CSV</button>
-          <!-- Styled pink like other primary actions -->
-          <button id="p_clear" class="btn" type="button">مسح السجل</button>
+          <!-- Match CSV (secondary) style for Record/Clear -->
+          <button id="p_clear" class="btn btn-secondary" type="button">مسح السجل</button>
         </div>
         <div class="col" style="flex:1">
           <div class="note">
@@ -304,7 +304,7 @@
         actions.className = 'actions act';
         actions.setAttribute('data-label','إجراء');
         const del = document.createElement('button');
-        del.className='btn btn-secondary'; del.type='button'; del.textContent='حذف';
+        del.className='btn'; del.type='button'; del.textContent='حذف';
         del.onclick = ()=>{ tr.remove(); recalcTotal(); };
         actions.appendChild(del);
         tr.appendChild(actions);
