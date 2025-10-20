@@ -210,7 +210,7 @@
         <div class="accordion-body" data-accordion-panel>
           <div class="table-scroll">
             <table class="table" id="positions-table">
-              <thead><tr><th>الرمز</th><th>الكمية</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
+              <thead><tr><th>الرمز</th><th>متوسط السعر</th><th>القيمة السوقية</th><th>الربح/الخسارة غير المحققة</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -340,13 +340,12 @@
       return getPositions().then(function(list){
         var total=0;
         if(!list || !list.length){
-          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+          var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="لا توجد مراكز مفتوحة."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
           lastPhysicalTotal = 0; updateTotalSummary(); return;
         }
         list.forEach(function(p){
           var tr=document.createElement("tr");
           tr.appendChild(td("الرمز",p.symbol));
-          tr.appendChild(td("الكمية",Number(p.qty).toLocaleString()));
           tr.appendChild(td("متوسط السعر",fmtCurrency(p.avg_entry_price)));
           tr.appendChild(td("القيمة السوقية",fmtCurrency(p.market_value)));
           tr.appendChild(td("الربح/الخسارة غير المحققة",fmtCurrency(p.unrealized_pl)));
@@ -355,7 +354,7 @@
         });
         lastPhysicalTotal = total; updateTotalSummary();
       }).catch(function(){
-        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=5; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
+        var tr=document.createElement("tr"); var t=document.createElement("td"); t.colSpan=4; t.textContent="فشل تحميل المراكز."; t.style.color="#9aa3ab"; tr.appendChild(t); body.appendChild(tr);
         lastPhysicalTotal = null; updateTotalSummary();
       });
     }
