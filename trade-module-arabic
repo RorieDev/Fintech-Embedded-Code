@@ -83,10 +83,14 @@
     .table td{background:#fff;border:1px solid var(--border);padding:10px;border-left:none;border-right:none}
     .table .sharia-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-weight:600;color:var(--text);font-size:12px;white-space:nowrap}
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
-    /* Positions column widths */
+    /* Positions alignment + column widths */
+    #positions-table th, #positions-table td{ text-align:right }
     #positions-table th.col-symbol, #positions-table td.col-symbol{min-width:72px;width:72px}
-    #positions-table th.col-purify, #positions-table td.col-purify{width:84px}
-    #positions-table td.col-purify{text-align:center}
+    /* Halve Purify column width (84px -> 42px). Actual width may expand to content. */
+    #positions-table th.col-purify, #positions-table td.col-purify{width:42px}
+    #positions-table td.col-purify{text-align:right}
+    /* Constrain P/L column narrower (approx 50% of prior layout) */
+    #positions-table th.col-pl, #positions-table td.col-pl{width:96px}
     #orders-table th:first-child,#orders-table td:first-child{min-width:150px;direction:ltr;font-variant-numeric:tabular-nums;text-align:left}
     #orders-table th:nth-child(2),#orders-table td:nth-child(2){min-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     #orders-table th:nth-child(2),#orders-table td:nth-child(2){padding-left:12px;padding-right:12px;}
@@ -220,8 +224,8 @@
             <table class="table" id="positions-table">
               <thead>
                 <tr>
-                  <th class="col-pl">الربح/الخسارة غير المحققة</th>
                   <th class="col-purify">تنقية</th>
+                  <th class="col-pl">الربح/الخسارة غير المحققة</th>
                   <th class="col-sharia">التوافق الشرعي</th>
                   <th>القيمة السوقية</th>
                   <th>متوسط السعر</th>
@@ -407,13 +411,13 @@
           var sym = (p.symbol||"").toUpperCase();
           if(sym){ activeSymbols[sym]=true; }
           var profit = toValidNumber(p.unrealized_pl);
-          // 1) P/L amount (rightmost in RTL)
+          // 1) Purify button (first column)
+          var purifyCell = createPurifyCell(sym, profit);
+          tr.appendChild(purifyCell);
+          // 2) P/L amount (second column)
           var plCell = td("الربح/الخسارة غير المحققة", fmtCurrency(p.unrealized_pl));
           plCell.className = 'col-pl';
           tr.appendChild(plCell);
-          // 2) Purify button
-          var purifyCell = createPurifyCell(sym, profit);
-          tr.appendChild(purifyCell);
           // 3) Sharia pill
           var shariaInfo = createShariaCell();
           shariaInfo.cell.className = 'col-sharia';
