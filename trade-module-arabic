@@ -85,6 +85,8 @@
     .table tr{box-shadow:var(--shadow)} .table .actions{display:flex;gap:8px}
     /* Positions alignment + column widths */
     #positions-table th, #positions-table td{ text-align:right }
+    /* Allow long Arabic headers to wrap instead of overflowing into next column */
+    #positions-table thead th{ white-space:normal; overflow-wrap:anywhere; word-break:break-word; line-height:1.25 }
     #positions-table th.col-symbol, #positions-table td.col-symbol{min-width:72px;width:72px}
     /* Halve Purify column width (84px -> 42px). Actual width may expand to content. */
     #positions-table th.col-purify, #positions-table td.col-purify{width:42px}
@@ -489,14 +491,20 @@
       cell.className = 'col-purify';
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = 'تنقية';
-      // Rounded pink button styling per spec
+      // Round pink button with no visible text
+      btn.textContent = '';
       btn.style.background = 'var(--accent)';
       btn.style.color = '#fff';
       btn.style.border = 'none';
-      btn.style.padding = '6px 12px';
+      btn.style.padding = '0';
+      btn.style.width = '28px';
+      btn.style.height = '28px';
       btn.style.borderRadius = '999px';
-      btn.style.fontWeight = '700';
+      btn.style.display = 'inline-flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.boxShadow = '0 4px 14px rgba(252,100,129,.35)';
+      btn.setAttribute('aria-label','تنقية');
       btn.style.cursor = 'pointer';
       btn.title = 'إرسال إلى سجل التنقية';
       btn.onmouseenter = function(){ btn.style.background = 'var(--accent-600)'; };
