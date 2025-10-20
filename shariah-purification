@@ -170,6 +170,9 @@
       const SHARIA_API = ORIGIN + '/wp-json/aiaas/v1/sharia-check';
       const PROXY_BASE = '/wp-json/alpaca/v1';
       const $ = (id)=>document.getElementById(id);
+      // Bridge keys (must match trade module)
+      const PURIFY_STORAGE_KEY = 'tamror_purify_queue';
+      const PURIFY_STORAGE_TICK = 'tamror_purify_last';
 
       /* Helpers */
       const fmtUSD = (n)=> (n==null || isNaN(+n)) ? '$0.00' : (+n).toLocaleString(undefined,{style:'currency',currency:'USD'});
@@ -311,6 +314,35 @@
         return tr;
       }
 
+      // Consume bridge queue from localStorage (for cross-page/tab handoff)
+      function consumeBridgeQueue(){
+        try{
+          if(typeof localStorage === 'undefined') return;
+          const raw = localStorage.getItem(PURIFY_STORAGE_KEY);
+          if(!raw) return;
+          let list = [];
+          try{ list = JSON.parse(raw); }catch(_){ list = []; }
+          if(!Array.isArray(list) || !list.length) return;
+          // Drain queue into the table; latest first
+          const seen = new Set();
+          list.forEach(item => {
+            const sym = normSym(item && item.symbol);
+            const profit = Number(item && item.profit);
+            let pct = Number(item && item.nonCompliantPct);
+            if(!sym || !(isFinite(profit) && profit > 0)) return;
+            if(!(isFinite(pct) && pct >= 0)){ pct = 100; }
+            if(seen.has(sym)) return; // show once per symbol on consume
+            seen.add(sym);
+            const existing = tbody.querySelector(`tr[data-symbol='${sym}'][data-source='auto']`);
+            if(existing){ existing.remove(); }
+            const row = addRow(sym, profit, clamp(pct,0,100));
+            if(row){ row.setAttribute('data-source','auto'); }
+          });
+          // Clear after consuming
+          localStorage.removeItem(PURIFY_STORAGE_KEY);
+        }catch(_){ }
+      }
+
       async function fetchRatio(sym){
         const url = SHARIA_API + '?symbol=' + encodeURIComponent(sym) + '&_ts=' + Date.now();
         const res = await fetch(url, { cache:'no-store' });
@@ -382,6 +414,15 @@
         }catch(_){ }
       });
 
+      // Also react to storage changes (other tabs/pages touching the bridge)
+      window.addEventListener('storage', (e)=>{
+        try{
+          if(e && (e.key === PURIFY_STORAGE_KEY || e.key === PURIFY_STORAGE_TICK)){
+            consumeBridgeQueue();
+          }
+        }catch(_){ }
+      });
+
       $('p_clear').addEventListener('click', ()=>{
         if(!confirm('مسح جميع السجلات؟')) return;
         tbody.innerHTML = '';
@@ -413,6 +454,9 @@
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=> URL.revokeObjectURL(url), 2000);
       });
+      // On load, consume any pending items from the trade module
+      consumeBridgeQueue();
+
     })();
   </script>
 </div>

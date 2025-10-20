@@ -254,6 +254,44 @@
     var shariaCache = Object.create(null);
     var purificationRelay = Object.create(null);
 
+    // Bridge keys for cross-page/tab communication with purification module
+    var PURIFY_STORAGE_KEY = 'tamror_purify_queue';
+    var PURIFY_STORAGE_TICK = 'tamror_purify_last';
+
+    // Persist an auto-purification entry so the purification module can consume it later
+    function enqueuePurificationBridge(detail){
+      try{
+        if(typeof localStorage === 'undefined'){ return; }
+        var raw = localStorage.getItem(PURIFY_STORAGE_KEY);
+        var list = [];
+        if(raw){
+          try{
+            list = JSON.parse(raw);
+            if(!Array.isArray(list)){ list = []; }
+          }catch(_){ list = []; }
+        }
+        var sym = (detail && detail.symbol || '').toUpperCase();
+        var profit = Number(detail && detail.profit);
+        var pct = detail && detail.nonCompliantPct;
+        var sanitized = {
+          symbol: sym,
+          profit: isFinite(profit) ? profit : 0,
+          nonCompliantPct: (pct!=null && isFinite(Number(pct))) ? Number(pct) : null,
+          ts: Date.now()
+        };
+        // Remove any existing entry for this symbol (keep latest on top)
+        var filtered = list.filter(function(it){
+          return (it && (it.symbol||'').toUpperCase()) !== sym;
+        });
+        filtered.unshift(sanitized);
+        // Keep the queue bounded
+        if(filtered.length > 50){ filtered = filtered.slice(0,50); }
+        localStorage.setItem(PURIFY_STORAGE_KEY, JSON.stringify(filtered));
+        // Touch a tick key to trigger storage events in other tabs/pages
+        localStorage.setItem(PURIFY_STORAGE_TICK, String(Date.now()));
+      }catch(_){ }
+    }
+
     function $(id){ return document.getElementById(id); }
     function fmtCurrency(n){ return (n==null || isNaN(+n)) ? "—" : (+n).toLocaleString(undefined,{style:"currency",currency:"USD"}); }
     var lastAccountPortfolio = null;
@@ -519,6 +557,8 @@
       var detail = { symbol: sym, profit: profitNum };
       if(ratio!=null && isFinite(ratio)){ detail.nonCompliantPct = Number(ratio); }
       window.dispatchEvent(new CustomEvent('tamror:purification:add', { detail: detail }));
+      // Persist to localStorage so the purification module can pick it up across pages/tabs
+      try{ enqueuePurificationBridge(detail); }catch(_){ }
     }
     function getSharia(symbol){
       var s = (symbol||'').toUpperCase();
